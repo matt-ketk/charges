@@ -38,9 +38,32 @@ class Plate(Conductor):
 
 		super(Plate, self).__init__(resistivity=resistivity)
 
+	def checkCollision(self, prevPos, pos, velocity, dampingFactor=1):
+		"""
+		checks to see if the specified particle collided with any of the faces of the plate
+		:param prevPos: previous position vector of the particle
+		:param pos: current position of the particle
+		:param velocity: current velocity vector of the particle
+		:param dampingFactor: the factor by which the velocity decreases upon impact
+		:return: the position of the collision, the particle's new velocity vector, the corners of face the particle
+		collided with. If there was no collision, returns None
+		"""
+		collisions = []
+		for face in self.faces:
+			col = Plate.rectangleCollision(prevPos, pos, face, velocity, dampingFactor=dampingFactor)
+			if col is not None:
+				collisions.append((face, col))
+
+		if len(collisions) == 0:
+			return None
+
+		col = min(collisions, key=lambda x: abs(x[1][0][0] - prevPos[0]))  # the actual collision is the first one
+		return col[1][0], col[1][1], col[0]
+
 	@staticmethod
 	def rectangleCollision(prevPos, pos, rCorners, velocity, dampingFactor=1):
 		"""
+		checks to see if a particle collided with the defined rectangle and gives you that particles updated info
 		rectangle must be parallel to xy, xz, or yz for now
 		:param prevPos: position of a particle at the previous iteration
 		:param pos: position of that particle at the current iteration
@@ -88,9 +111,9 @@ class Plate(Conductor):
 			colPos[x] = xCol
 			colPos[y] = yCol
 			colPos[z] = planeZ
-			velocity[z] *= -1
-			velocity *= dampingFactor
-			return colPos, velocity
+			newVelocity = velocity * dampingFactor
+			newVelocity[z] *= -1
+			return colPos, newVelocity
 		return None
 
 	@staticmethod
@@ -105,4 +128,3 @@ class Plate(Conductor):
 		if inclusive:
 			return min(bounds[0], bounds[1]) <= x <= max(bounds[0], bounds[1])
 		return min(bounds[0], bounds[1]) < x < max(bounds[0], bounds[1])
-
