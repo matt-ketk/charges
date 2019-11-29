@@ -54,20 +54,19 @@ class Wire(Conductor):
         if np.isinf(mz):
             return None
 
-        xCol = Wire.quad(1 + m ** 2, 2 * (A * m + self.start[x]), A ** 2 + self.start[x] ** 2 - self.r ** 2)
+        xColTemp = Wire.quad(1 + m ** 2, 2 * (A * m + self.start[x]), A ** 2 + self.start[x] ** 2 - self.r ** 2)
 
         withinSegment = False
-        if len(xCol) == 0:
+        if len(xColTemp) == 0:
             return None
-        if len(xCol) == 1:
-            xCol = xCol[0]
+        if len(xColTemp) == 1:
+            xCol = xColTemp[0]
             withinSegment = Plate.inInterval(xCol, (prevPos[x], pos[x]))
-        elif Plate.inInterval(xCol[0], (prevPos[x], pos[x])):
-            xCol = xCol[0]
-            withinSegment = True
-        elif Plate.inInterval(xCol[1], (prevPos[x], pos[x])):
-            xCol = xCol[1]
-            withinSegment = True
+        else:
+            xColTemp = [xc for xc in xColTemp if Plate.inInterval(xc, (prevPos[x], pos[x]))]
+            if len(xColTemp) != 0:
+                withinSegment = True
+                xCol = min(xColTemp, key=lambda p: abs(p - prevPos[0]))
 
         if not withinSegment:
             return None
