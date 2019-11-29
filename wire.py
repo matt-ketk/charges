@@ -2,7 +2,7 @@ import numpy as np
 
 from constants import Constants
 from conductor import Conductor
-
+from plate import Plate
 
 class Wire(Conductor):
     def __init__(self, start, lengthV, r, resistivity=Constants.COPPER_RESISTIVITY):
@@ -20,7 +20,7 @@ class Wire(Conductor):
         self.end = start + lengthV
         self.r = r
 
-    def checkCollision(self, pos, prevPos):
+    def checkCollision(self, prevPos, pos):
         """
         checks for collision of a particle with the cylinder given its position (as a numpy array) at 2 successive iterations
         returns: the position of the collision and the particle's new velocity vector. If there was no colision returns None.
@@ -42,23 +42,12 @@ class Wire(Conductor):
             x = 1
             y = 2
 
-        # find x coordinate of collision (xCol) if its within the circle
+        # ###---find x coordinate of collision (xCol) if its within the circle---###
         m = (prevPos[y] - pos[y]) / (prevPos[x] - pos[x])
+        # calculate with x and y swapped if the slope is infinite so now the slope is 0
         if np.isinf(m):
-            # calculate with x and y swapped if the slope is infinite so now the slope is 0
-            xTemp = x
-            x = y
-            y = xTemp
+            x, y = y, x
             m = (prevPos[y] - pos[y]) / (prevPos[x] - pos[x])
-
-        # if np.isinf(m):
-        #     if pos[x] <= self.r:
-        #         xCol = pos[x]
-        #         yCol = self.r
-        #         if not min(prevPos[y], pos[y]) <= yCol <= max(prevPos[y], pos[y]):
-        #
-        #     else:
-        #         return pos, np.zeros(3)
 
         A = -m * prevPos[x] + prevPos[y] - self.start[y]
         mz = (prevPos[z] - pos[z]) / (prevPos[x] - pos[x])
@@ -72,22 +61,19 @@ class Wire(Conductor):
             return None
         if len(xCol) == 1:
             xCol = xCol[0]
-            withinSegment = min(prevPos[x], pos[x]) <= xCol <= max(prevPos[x], pos[x])
-        else:
-            withinSegment0 = min(prevPos[x], pos[x]) <= xCol[0] <= max(prevPos[x], pos[x])
-            withinSegment1 = min(prevPos[x], pos[x]) <= xCol[1] <= max(prevPos[x], pos[x])
-            if withinSegment0:
-                xCol = xCol[0]
-                withinSegment = True
-            elif withinSegment1:
-                xCol = xCol[1]
-                withinSegment = True
+            withinSegment = Plate.inInterval(xCol, (prevPos[x], pos[x]))
+        elif Plate.inInterval(xCol[0], (prevPos[x], pos[x])):
+            xCol = xCol[0]
+            withinSegment = True
+        elif Plate.inInterval(xCol[1], (prevPos[x], pos[x])):
+            xCol = xCol[1]
+            withinSegment = True
 
-            if not withinSegment:
-                return None
+        if not withinSegment:
+            return None
 
-            # find y coordinate of collision (yCol)
-            yCol = m * (xCol - prevPos[x]) + prevPos[y]
+        # find y coordinate of collision (yCol)
+        yCol = m * (xCol - prevPos[x]) + prevPos[y]
 
         # find z coordinate of collision (zCol) and check if it's within the length vector of the cylinder
         zCol = mz * (xCol - prevPos[x]) + prevPos[z]
