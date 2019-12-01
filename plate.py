@@ -29,12 +29,12 @@ class Plate(Conductor):
 				for z in (vertex1[2], vertex2[2]):
 					self.vertices.append(np.array((x, y, z)))
 		self.faces = []
-		self.faces.append(tuple(v for v in self.vertices[:4]))
-		self.faces.append(tuple(v for v in self.vertices[4:]))
-		self.faces.append(tuple(self.vertices[i] for i in range(len(self.vertices)) if i % 4 < 2))
-		self.faces.append(tuple(self.vertices[i] for i in range(len(self.vertices)) if i % 4 >= 2))
-		self.faces.append(tuple(v for v in self.vertices[::2]))
-		self.faces.append(tuple(v for v in self.vertices[1::2]))
+		self.faces.append(tuple(self.vertices[i] for i in [0, 1, 3, 2]))
+		self.faces.append(tuple(self.vertices[i] for i in [4, 5, 7, 6]))
+		self.faces.append(tuple(self.vertices[i] for i in [0, 1, 5, 4]))
+		self.faces.append(tuple(self.vertices[i] for i in [2, 3, 7, 6]))
+		self.faces.append(tuple(self.vertices[i] for i in [0, 2, 6, 4]))
+		self.faces.append(tuple(self.vertices[i] for i in [1, 3, 7, 5]))
 
 		super(Plate, self).__init__(resistivity=resistivity)
 
@@ -68,52 +68,66 @@ class Plate(Conductor):
 		:param prevPos: position of a particle at the previous iteration
 		:param pos: position of that particle at the current iteration
 		:param rCorners: a tuple of the corner points of a rectangle in 3D space to check for collisions
+		stored such that ADJACENT CORNERS IN THE LIST ARE ADJACENT IN THE RECTANGLE
 		:param velocity: the initial velocity vector of the particle
 		:param dampingFactor: the factor by which the particle's velocity decreases upon impact
 		:return: the collision position of the particle and its new velocity. if no collision returns None
 		"""
-		# find orientation of the rectangle
-		for i in range(3):
-			if all(rCorners[0][i] == rCorners[j][i] for j in range(4)):
-				z = i
-				break
-		if z != 0:
-			x = 0
-			if z != 1:
-				y = 1
-			else:
-				y = 2
-		else:
-			x = 1
-			y = 2
-		planeZ = rCorners[0][z]
-		xBounds = (min(c[x] for c in rCorners), max(c[x] for c in rCorners))
-		yBounds = (min(c[y] for c in rCorners), max(c[y] for c in rCorners))
+		# find basis for the plane that the rectangle is parallel to
+		basis = list()
+		basis.append(rCorners[1] - rCorners[0])
+		basis.append(rCorners[2] - rCorners[1])
+		# so that the new space obeys right hand rule and can be represented like cartesian with z point out of the page
+		basis.append(np.cross(basis[0], basis[1]))
+		basis = np.array(basis, dtype=float)
+		for i in range(len(basis)):
+			basis[i] /= np.linalg.norm(basis[i])
+		changeBasisM = basis.transpose()
+		invChangeBasisM = np.linalg.inv(changeBasisM)
+		newRectCorners = tuple(invChangeBasisM @ corner for corner in rCorners)
+		planeZ = newRectCorners[0][2]
+
+		nPrevPos = invChangeBasisM @ prevPos
+		nPos = invChangeBasisM @ pos
+
+		xBounds = (min(c[0] for c in newRectCorners), max(c[0] for c in newRectCorners))
+		yBounds = (min(c[1] for c in newRectCorners), max(c[1] for c in newRectCorners))
 
 		# ###---find coordinate of collision---###
-		m = (prevPos[y] - pos[y]) / (prevPos[x] - pos[x])
+		m = (nPrevPos[1] - nPos[1]) / (nPrevPos[0] - nPos[0])
 		# calculate with x and y swapped if the slope is infinite so now the slope is 0
 		if np.isinf(m):
-			x, y = y, x
-			m = (prevPos[y] - pos[y]) / (prevPos[x] - pos[x])
-		if Plate.inInterval(planeZ, (prevPos[z], pos[z])):
+			permuteXY = np.array([[0, 1, 0], [1, 0, 0], [0, 0, 1]])
+			changeBasisM = permuteXY @ changeBasisM
+			invChangeBasisM = invChangeBasisM @ permuteXY
+			newRectCorners = tuple(invChangeBasisM @ corner for corner in rCorners)
+			nPrevPos = invChangeBasisM @ prevPos
+			nPos = invChangeBasisM @ pos
+			xBounds = (min(c[0] for c in newRectCorners), max(c[0] for c in newRectCorners))
+			yBounds = (min(c[1] for c in newRectCorners), max(c[1] for c in newRectCorners))
+
+			m = (nPrevPos[1] - nPos[1]) / (nPrevPos[0] - nPos[0])
+		if Plate.inInterval(planeZ, (nPrevPos[2], nPos[2])):
 			# this tells you how far along the path between the 2 points the collision occurred (assuming infinite plane)
-			zRatio = abs(prevPos[z] - planeZ) / abs(prevPos[z] - pos[z])
+			zRatio = abs(nPrevPos[2] - planeZ) / abs(nPrevPos[2] - nPos[2])
 			if np.isinf(zRatio):
 				return None
-			xCol = zRatio * (pos[x] - prevPos[x]) + prevPos[x]
+			xCol = zRatio * (nPos[0] - nPrevPos[0]) + nPrevPos[0]
 		else:
 			return None
 
-		yCol = m * (xCol - prevPos[x]) + prevPos[y]
+		yCol = m * (xCol - nPrevPos[0]) + nPrevPos[1]
 		if Plate.inInterval(xCol, xBounds) and Plate.inInterval(yCol, yBounds):
 			colPos = np.zeros(3)
-			colPos[x] = xCol
-			colPos[y] = yCol
-			colPos[z] = planeZ
-			newVelocity = velocity * dampingFactor
-			newVelocity[z] *= -1
-			return colPos, newVelocity
+			colPos[0] = xCol
+			colPos[1] = yCol
+			colPos[2] = planeZ
+			originalBasisColPos = changeBasisM @ colPos
+
+			newVelocity = dampingFactor * invChangeBasisM @ velocity
+			newVelocity[2] *= -1
+			originalBasisNewVel = changeBasisM @ newVelocity
+			return originalBasisColPos, originalBasisNewVel
 		return None
 
 	@staticmethod
