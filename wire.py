@@ -25,5 +25,6 @@ class Wire(conductor):
 		checks for collision of a particle with the cylinder given its position (as a numpy array) at 2 successive iterations
 		returns: the position of the collision and the particle's new velocity vector. If there was no colision returns None.
 		"""
+	
 		
 
