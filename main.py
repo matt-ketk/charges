@@ -4,8 +4,29 @@ from pygame.locals import *
 import numpy as np
 
 from environment import Environment
+from charge import Charge
+from p2p import forces, deltaPosition, deltaVelocity
+
+import debugtools as dbt
 
 def main():
+  lCharges = [Charge(np.random.choice([-1, 1]) * 1E-8, np.random.random(3))for i in range (100)]
+
+  n = 100
+
+  coords = np.random.random((n, 3))
+  charges = np.random.choice([-1, 1], n) * 1E-8
+  masses = np.ones(n) * 1
+
+  vel = np.zeros((n, 3))
+
+  dt = 0.1
+
+  f = forces(coords, charges)
+  print(masses)
+  vel = vel + deltaVelocity(dt, f, masses)
+  coords = coords + deltaPosition(dt, f, vel, masses)
+
   pygame.init()
   screen = pygame.display.set_mode((1000, 1000))
 
@@ -40,8 +61,15 @@ def main():
                     env.changePerspective(dx, -dy)
           
         screen.fill((255, 255, 255))
-      
-        env.drawCylinder(np.array([0, 0, 0]), np.array([0, 0, 20]), 5, (255, 100, 100))
+
+        for c in range (n):
+          pos = coords[c]
+          color = (255, 100, 100)
+          if charges[c] < 0:
+                color = (100, 100, 255)
+          
+          env.drawParticle(pos, color, radius = 5)
+
         pygame.display.flip()                
 
 if __name__ == "__main__":
