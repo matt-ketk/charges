@@ -11,7 +11,7 @@ class Nucleus:
   def reflectVector(self, particle):
     n = self.collisionNormal(particle)
     v = particle.velocity
-    return dampeningFactor * (v - 2 * n * np.dot(n, v))
+    return self.dampeningFactor * (v - 2 * n * np.dot(n, v))
   # returns a unit vector that is a surface normal at the point of collision
   def collisionNormal(self, particle):
     v = self.collisionPoint(particle) - self.center
@@ -57,7 +57,7 @@ class Nucleus:
     return (b ** 2 - 4 * (a * c) >= 0)
       
 
-
+'''
 def main():
   c = Charge(1.0, np.zeros(3), np.array([1,1,1]))
   n = Nucleus(np.array([57,56,58]), 5, 0.9)
@@ -65,3 +65,4 @@ def main():
   print("normal vector:", n.collisionNormal(c))
   print("reflected velocity vector:", n.reflectVector(c))
 main()
+'''
