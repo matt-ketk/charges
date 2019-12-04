@@ -9,11 +9,13 @@ class Nucleus:
     self.dampeningFactor = dampeningFactor
 
   def reflectVector(self, particle):
-    pass
-
+    n = self.collisionNormal(particle)
+    v = particle.velocity
+    return v - 2 * n * np.dot(n, v)
+  # returns a unit vector that is a surface normal at the point of collision
   def collisionNormal(self, particle):
-    return collisionPoint(particle) - self.center
-
+    v = self.collisionPoint(particle) - self.center
+    return v / np.linalg.norm(v)
 
   def collisionPoint(self, particle):
     unitV = particle.velocity / np.linalg.norm(particle.velocity)
@@ -35,7 +37,7 @@ class Nucleus:
 
     # in the case that the quadratic formula outputs two possible results, I CURRENTLY DO NOT KNOW HOW TO DETERMINE WHICH ONE IS WHICH. There is the entry point and there is the exit point (if you know what I mean) imma leave it here fo now...
 
-    distance = -(b / 2) + np.sqrt(b ** 2 - c)
+    distance = -(b / 2) - np.sqrt((b / 2) ** 2 - c)
     # distance = -(b / 2) - np.sqrt(b ** 2 - c) # the alternative solution
 
     return (origin + distance * unitV)
@@ -54,12 +56,12 @@ class Nucleus:
 
     return (b ** 2 - 4 * (a * c) >= 0)
       
+
+
 def main():
-  p = Charge (1, np.array([0,0,0]), np.array([1,1,1]))
-  n = Nucleus(np.array([2,2,2,]), 1, 0.5)
-
-  print (n.willCollide(p))
-  
-
-if __name__ == "__main__":
-    main()
+  c = Charge(1.0, np.zeros(3), np.array([1,1,1]))
+  n = Nucleus(np.array([57,56,58]), 5, 0.9)
+  print("point of collision:", n.collisionPoint(c))
+  print("normal vector:", n.collisionNormal(c))
+  print("reflected velocity vector:", n.reflectVector(c))
+main()
