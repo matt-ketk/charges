@@ -56,13 +56,12 @@ class Nucleus:
 
     return (b ** 2 - 4 * (a * c) >= 0)
       
-
-'''
 def main():
-  c = Charge(1.0, np.zeros(3), np.array([1,1,1]))
-  n = Nucleus(np.array([57,56,58]), 5, 0.9)
-  print("point of collision:", n.collisionPoint(c))
-  print("normal vector:", n.collisionNormal(c))
-  print("reflected velocity vector:", n.reflectVector(c))
-main()
-'''
+  p = Charge (1, np.array([0,0,0]), np.array([1,1,1]))
+  n = Nucleus(np.array([4,4,4]), 1, 0.5)
+
+  print (n.collisionPoint(p))
+  
+
+if __name__ == "__main__":
+    main()
