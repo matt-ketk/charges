@@ -20,7 +20,7 @@ class Wire(Conductor):
         self.end = start + lengthV
         self.r = r
 
-    def checkCollision(self, prevPos, pos):
+    def checkCollision(self, prevPos, pos, vel, dampeningFactor=1):
         """
         checks for collision of a particle with the cylinder given its position (as a numpy array) at 2 successive iterations
         returns: the position of the collision and the particle's new velocity vector. If there was no colision returns None.
@@ -85,7 +85,16 @@ class Wire(Conductor):
         colPos[z] = zCol
         colPos[x] = xCol
         colPos[y] = yCol
-        return colPos, np.zeros(3)
+
+        # find normal vector to the cylinder to calculate the new velocity
+        normal = np.zeros(3)
+        normal[x] = xCol - self.start[x]
+        normal[y] = yCol - self.start[y]
+        normal[z] = 0
+        normal /= self.r
+
+        newVel = dampeningFactor * (vel - 2 * normal * np.dot(normal, vel))
+        return colPos, newVel
 
 
     @staticmethod
