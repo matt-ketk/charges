@@ -73,7 +73,13 @@ class Environment:
         position_ = self.transformPoint(position)[0]
 
         # We only display the projection of the particle onto the XY plane
-        pygame.gfxdraw.aacircle(self.surface, position_[0], position_[1], radius, color)
+        if radius == 0:
+            self.surface.set_at((position_[0], position_[1]), color)
+        
+        
+            
+        else:
+            pygame.gfxdraw.aacircle(self.surface, position_[0], position_[1], radius, color)
     
     def drawMesh(self, polygons, color, filled = False):
         """Draws an arbitrary mesh, this will probably be used for drawing cubes/rectangular prisms/plates"""
