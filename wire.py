@@ -60,8 +60,7 @@ class Wire(Conductor):
         if len(xColTemp) == 0:
             return None
         if len(xColTemp) == 1:
-            xCol = xColTemp[0]
-            withinSegment = Plate.inInterval(xCol, (prevPos[x], pos[x]))
+            return None
         else:
             xColTemp = [xc for xc in xColTemp if Plate.inInterval(xc, (prevPos[x], pos[x]))]
             if len(xColTemp) != 0:
@@ -76,7 +75,8 @@ class Wire(Conductor):
 
         # find z coordinate of collision (zCol) and check if it's within the length vector of the cylinder
         zCol = mz * (xCol - prevPos[x]) + prevPos[z]
-        withinHeight = min(0, self.lengthV[z]) <= zCol <= max(0, self.lengthV[z])
+        withinHeight = min(self.start[z], self.end[z]) <= zCol <= max(self.start[z], self.end[z])
+        
 
         if not withinHeight:
             return None

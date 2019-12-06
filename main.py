@@ -7,51 +7,51 @@ from environment import Environment
 from charge import Charge
 from p2p import forces, deltaPosition, deltaVelocity
 from constants import Constants
+from wire import Wire
 
 import debugtools as dbt
 
 def main():
-  lCharges = [Charge(np.random.choice([-1, 1]) * 1E-8, np.random.random(3))for i in range (100)]
+  np.random.seed(10)
 
-  n = 120
   coords = []
   charges = []
   masses = []
   stationary = []
-  for i in range (10):
-        for j in range (10):
-              
-              coords.append([-1 + i * 0.2, -1 + j * 0.2, 0])
-              charges.append(1 * 1E-8)
-              masses.append(1E-3)
-              stationary.append([1])
-    
+
+  w = Wire (np.array([0,0,-25]), np.array([0,0,50]), 0.5)
+  
+  # protons
+  for i in range (2):
+        for j in range (2):
+            for k in range (25):
+                coords.append([-0.3 + i * 0.6,-0.3 + j * 0.6, k * 0.08])
+                charges.append(1 * 1E-8)
+                masses.append(1E-3)
+                stationary.append([1])
+  
+  # electrons
   for i in range (20):
-        coords.append(np.random.uniform(-1, 1, 3) * 2)
+        coords.append(np.random.uniform(-0.2, 0.2, 3) * 2 + np.array([0,0,0.6]))
         charges.append(-1 * 1E-8)
         masses.append(1E-3)
         stationary.append([0])
 
-  coords, charges, masses, stationary = np.array(coords), np.array(charges), np.array(masses), np.array(stationary)
-
+  coords, prevCoords, charges, masses, stationary = np.array(coords), np.array(coords), np.array(charges), np.array(masses), np.array(stationary)
+  n = charges.size
   vel = np.zeros((n, 3)) 
-  vel[0] = np.array([0, 0, -0.1]).astype(float)
+  vel[0] = np.array([0.01, 0.02, 0]).astype(float)
 
   vel2 = np.zeros((n, 3))
   
   dt = 0.1
 
   pygame.init()
-  screen = pygame.display.set_mode((1000, 1000))
-
-  env = Environment(screen, (1000, 1000))
-  env2 = Environment(screen, (1000, 1000))
-  env.offset = np.array([400, 500])
-  env2.offset = np.array([600, 500])
-  env.changePerspective(-0.05, 0)
-  env2.changePerspective(0.05, 0)
-  env2.zoom = 40
-  env.zoom = 40
+  screenSize = (800, 800)
+  screen = pygame.display.set_mode(screenSize)
+  env = Environment(screen, screenSize)
+  env.changePerspective(0, 0)
+  env.zoom = 100
 
   # Relevant variables
   events = {
@@ -81,15 +81,29 @@ def main():
                   if events['mouseDown']:
                     dy, dx = rel[1] * 3.1415/180 / 5, rel[0] * 3.1415/180 / 5
                     env.changePerspective(dx, -dy)
-                    env2.changePerspective(dx, -dy)
-          
+
         screen.fill((255, 255, 255))
 
         f = forces(coords, charges)
         
+        prevCoords = coords
         vel = vel + deltaVelocity(dt, f, masses).T * (1 - stationary)
         coords = coords + deltaPosition(dt, f, vel.T, masses).T * (1  -stationary)
 
+        for i in range (n):
+          result = w.checkCollision(prevCoords[i], coords[i], vel[i])
+          if (coords[i][0] ** 2 +coords[i][1]**2 > w.r**2) and not result:
+              w.checkCollision(prevCoords[i], coords[i], vel[i])
+          if result:
+            colPos, newVel = result
+            vel[i] = newVel
+
+            #prevCoords[i] = coords[i]
+            coords[i] = colPos + 0.005 * newVel
+
+          collision = bool(result)
+
+          
         # also a magnetic field in the positive z-axis, [0, 0, 1]
         
 
@@ -122,17 +136,16 @@ def main():
           r = 3
           if charges[c] < 0:
                color = (100, 100, 255)
+               if collision:
+                 color = (50, 200, 50)
                r = 1
-
-               if pos[-1] > 0:
-                     color = (200, 200, 255)
+          
           
           env.drawParticle(pos, color, radius = r)
-          env2.drawParticle(pos, color, radius = r)
 
-          pygame.draw.rect(screen, (255, 0, 0), (400 - 10, 650, 20, 15), 2)
-          pygame.draw.rect(screen, (255, 0, 0), (400 - 10 + 200, 650, 20, 15))
           #env.drawParticle(pos2, color2, radius = 6)
+
+        env.drawCylinder(np.array([0,0,-25]), np.array([0,0,25]), 0.5, color = (255, 100, 100))
 
         pygame.display.flip()                
 
