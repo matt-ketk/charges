@@ -14,23 +14,16 @@ class Wire(Conductor):
         super(Wire, self).__init__(resistivity=resistivity)
 
         if len([i for i in lengthV if i != 0]) != 1:
-            print("Warning: non-orthogonal wires are not yet supported")
+            raise NotImplementedError("non-orthogonal wires are not yet supported")
         self.start = start
         self.lengthV = lengthV
         self.end = start + lengthV
         self.r = r
 
-    def checkCollision(self, prevPos, pos, vel, dampeningFactor=1):
+    def getXYZ(self):
         """
-        checks for collision of a particle with the cylinder given its position (as a numpy array) at 2 successive iterations
-        returns: the position of the collision and the particle's new velocity vector. If there was no colision returns None.
+        :return: (x, y, z), where z is the axis aligned with the length of the cylinder
         """
-
-        # if the point didn't move ignore it
-        if all(pos == prevPos):
-            return None
-
-        # find orientation of wire
         z = np.argmax(np.abs(self.lengthV))
         if z != 0:
             x = 0
@@ -41,6 +34,21 @@ class Wire(Conductor):
         else:
             x = 1
             y = 2
+        return x, y, z
+
+    def checkCollision(self, prevPos, pos, vel, dampeningFactor=1):
+        """
+        checks for collision of a particle with the cylinder given its position (as a numpy array) at 2 successive iterations
+        returns: the position of the collision and the particle's new velocity vector. If there was no colision returns None.
+        """
+        #TODO: make the input an array of positions/velocities and use numpy operations rather than a for loop
+
+        # if the point didn't move ignore it
+        if all(pos == prevPos):
+            return None
+
+        # find orientation of wire
+        x, y, z = self.getXYZ()
 
         # ###---find x coordinate of collision (xCol) if its within the circle---###
         m = (prevPos[y] - pos[y]) / (prevPos[x] - pos[x])
