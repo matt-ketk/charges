@@ -19,41 +19,38 @@ def main():
   charges = []
   masses = []
   stationary = []
-  #w = Wire (np.array([0,0,-10E-10]), np.array([0,0,2E-9]), 6E-10)
-  '''
+  w = Wire (np.array([0,0,-20E-10]), np.array([0,0,4E-9]), 4E-10)
+  
   lattice = LatticeIon.generateLatticePoints(w)
 
   for ion in lattice:
     center, charge, mass, stat = ion.compile()
     coords.append(center)
-    charges.append(charge)
-    masses.append(mass)
+    charges.append(Constants.E)
+    masses.append(Constants.COPPER_MASS)
     stationary.append([stat])
   
   
-  '''
+  
   # protons
-  for i in range (2):
-        for j in range (2):
-            for k in range (2):
-                coords.append([-9E-10 * i, -9E-10 * j, k * 9E-10 - 4E-10])
-                charges.append(Constants.E)
-                masses.append(Constants.COPPER_MASS)
-                stationary.append([1])
+  #for i in range (2):
+  #      for j in range (2):
+  #          for k in range (2):
+  #              coords.append([-9E-10 * i, -9E-10 * j, k * 9E-10 - 4E-10])
+  #              charges.append(Constants.E)
+  #              masses.append(Constants.COPPER_MASS)
+  #              stationary.append([1])
   
   
   # electrons
-  for i in range (8):
-        coords.append(np.random.uniform(-10E-10, 10E-10, 3)  + np.array([0,0,np.random.uniform(-10E-10, 10E-10)]))
+  for i in range (20):
+        coords.append(np.random.uniform(-3E-10, 3E-10, 3)  + np.array([0,0,np.random.uniform(-5E-10, 5E-10)]))
         charges.append(-Constants.E)
         masses.append(Constants.MASS_ELECTRON)
         stationary.append([0])
   
-
-  
   #print (coords)
   coords, prevCoords, charges, masses, stationary = np.array(coords), np.array(coords), np.array(charges), np.array(masses), np.array(stationary)
-
   
   print ("PROTONS")
   print (coords[:-1])
@@ -71,13 +68,13 @@ def main():
 
   vel2 = np.zeros((n, 3))
   
-  dt = 1E-10
+  dt = 1E-17
 
   pygame.init()
   screenSize = (800, 800)
   screen = pygame.display.set_mode(screenSize)
   env = Environment(screen, screenSize)
-  env.changePerspective(0, 0)
+  env.changePerspective(0, 1.57)
   env.zoom = 10E10
 
   # Relevant variables
@@ -111,12 +108,12 @@ def main():
 
         screen.fill((255, 255, 255))
 
-        f = forces(coords, charges)
-        
+        f = np.array([[0], [0], [-5e-10]]) + forces(coords, charges) 
+   
         prevCoords = coords
         vel = vel + deltaVelocity(dt, f, masses).T * (1 - stationary)
         coords = coords + deltaPosition(dt, f, vel.T, masses).T * (1  -stationary)
-        '''
+        
         for i in range (n):
           result = w.checkCollision(prevCoords[i], coords[i], vel[i])
           if (coords[i][0] ** 2 +coords[i][1]**2 > w.r**2) and not result:
@@ -126,11 +123,12 @@ def main():
             vel[i] = newVel
 
             #prevCoords[i] = coords[i]
-            coords[i] = colPos + 0.005 * newVel
+            coords[i] = colPos + dt * newVel * 2
+            print(newVel, colPos, coords[i])
 
           collision = bool(result)
 
-        '''  
+         
         # also a magnetic field in the positive z-axis, [0, 0, 1]
         #print ("\n")
 
@@ -170,7 +168,7 @@ def main():
 
           #env.drawParticle(pos2, color2, radius = 6)
 
-        #env.drawCylinder(w.start, w.end, w.r, color = (255, 100, 100))
+        env.drawCylinder(w.start, w.end, w.r, color = (255, 100, 100))
 
         pygame.display.flip()                
 

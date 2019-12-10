@@ -33,7 +33,7 @@ def forces(coords, charges):
   #print(distanceVectors.shape, chargeProducts.shape, distances.shape)
 
   # find forces between each pair of particles (3D array)
-  forcesSplit = -1 * Constants.K * distanceVectors * np.divide(chargeProducts, distances ** 3 + 1E-20) # added 1E-12 to avoid divide by zero error 
+  forcesSplit = -1 * Constants.K * distanceVectors * np.divide(chargeProducts, distances ** 3 + 1E-30) # added 1E-12 to avoid divide by zero error 
 
   # find forces on each particle from by summing the forces from all the other particles from forcesSplit (2D array)
   forces = np.sum(forcesSplit, axis = 2)
