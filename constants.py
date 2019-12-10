@@ -2,6 +2,7 @@ import math
 
 class Constants:
     COPPER_RESISTIVITY = 1.72E-8  # Ohm * m
+    #E0 = 8.85418782E-12  # C^2 / (N * m^2)
     E0 = 8.85418782E-12  # C^2 / (N * m^2)
     M0 = (4 * math.pi) * 1E-7  # (T * m) / A
 
@@ -13,5 +14,9 @@ class Constants:
     MASS_ELECTRON = 9.10938356E-31  # Kg
     MASS_NEUTRON = 1.674927471E-27  # Kg
 
-    COPPER_CUBE_SIZE = 5.308E-10  # m
+    #COPPER_CUBE_SIZE = 1  # m (fake)
+    #COPPER_ION_RADIUS = 0.2  # m (fake)
+    COPPER_MASS = 1.055E-25 # Kg
+
+    COPPER_CUBE_SIZE = 5.308E-10  # m 
     COPPER_ION_RADIUS = 9.1E-11  # m

@@ -26,9 +26,10 @@ class LatticeIon:
          ]
     )
 
-    def __init__(self, center, radius, dampeningFactor):
+    def __init__(self, center, radius, charge, dampeningFactor):
         self.center = center
         self.radius = radius
+        self.charge = charge
         self.dampeningFactor = dampeningFactor
 
     def reflectVector(self, particle):
@@ -49,7 +50,7 @@ class LatticeIon:
 
         # this is where it gets tricky... so basically,
 
-        # between a line and a sphere, either oneh, two, or no intersections are formed
+        # between a line and a sphere, either one, two, or no intersections are formed
 
         # put simply, the calculations look kind of like when solving a quadratic equation, and they are...
         # ad^2 + bd + c = 0
@@ -113,10 +114,13 @@ class LatticeIon:
                     p = center + relPoint
                     if LatticeIon.isInWire(p, cond, orientation=(x, y, z)):
                         latticePoints.add(tuple(p))
-            return np.array(list(latticePoints))
+            return [LatticeIon(p, Constants.COPPER_ION_RADIUS, Constants.E, 1) for p in latticePoints]
         else:
             raise NotImplementedError("This kind of conductor is not yet supported")
+    
 
+    def compile(self):
+        return (self.center, self.charge, Constants.COPPER_MASS, 1)
 
 def main():
     """c = Charge(1.0, np.zeros(3), np.array([1, 1, 1]))
