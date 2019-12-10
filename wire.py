@@ -19,6 +19,12 @@ class Wire(Conductor):
         self.lengthV = lengthV
         self.end = start + lengthV
         self.r = r
+        
+        self.coords = []
+        self.charges = []
+        self.masses = []
+        self.stationary = []
+        
 
     def getXYZ(self):
         """
@@ -103,7 +109,19 @@ class Wire(Conductor):
 
         newVel = dampeningFactor * (vel - 2 * normal * np.dot(normal, vel))
         return colPos, newVel
-
+    
+    def compile(self, list):
+        self.coords = []
+        self.charges = []
+        self.masses = []
+        self.stationary = []
+        
+        for entry in list:
+            self.coords.append(list[0])
+            self.charges.append(list[1])
+            self.masses.append(list[2])
+            self.stationary.append(list[3])
+        return self.coords, self.charges, self.masses, self.coords
 
     @staticmethod
     def quad(a, b, c):
