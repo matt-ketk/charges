@@ -3,6 +3,7 @@ import numpy as np
 from wire import Wire
 from charge import Charge
 from constants import Constants
+from plate import Plate
 
 
 class LatticeIon:
@@ -26,26 +27,52 @@ class LatticeIon:
          ]
     )
 
-    def __init__(self, center, radius, charge, dampeningFactor):
+    def __init__(self, center, radius, charge):
         self.center = center
         self.radius = radius
         self.charge = charge
-        self.dampeningFactor = dampeningFactor
+        # self.dampeningFactor = dampeningFactor
 
-    def reflectVector(self, particle):
-        n = self.collisionNormal(particle)
-        v = particle.velocity
-        return self.dampeningFactor * (v - 2 * n * np.dot(n, v))
+    def checkCollision(self, prevPos, pos, velocity, dampeningFactor=1):
+        # essentially boolean output whether particle is gonna hit given its trajectory OF THAT TICK (as in its current position + velocity * dt)
+        # has the same meat and bones of the method above, but now it outputs a boolean based on the quadratic discriminant formula, b**2 -4ac >= 0.
+        unitV = velocity / np.linalg.norm(velocity)
 
-    def collisionNormal(self, particle):
+        d = prevPos - self.center
+
+        a = np.linalg.norm(unitV) ** 2
+        b = 2 * (np.dot(unitV, d))
+        c = np.dot(d, d) - self.radius ** 2
+
+        intersection = (LatticeIon.discriminant(a, b, c) >= 0)
+        if not intersection:
+            return None
+    
+        colPos = self.collisionPoint(prevPos, velocity)
+        if pos[0] - prevPos[0] != 0:
+            if not Plate.inInterval(colPos[0], (pos[0], prevPos[0])):
+                return None
+        elif pos[1] - prevPos[1] != 0:
+            if not Plate.inInterval(colPos[1], (pos[1], prevPos[1])):
+                return None
+        else:
+            if not Plate.inInterval(colPos[2], (pos[2], prevPos[2])):
+                return None
+        return colPos, self.reflectVector(colPos, velocity, dampeningFactor=dampeningFactor)
+
+    def reflectVector(self, position, velocity, dampeningFactor=1):
+        n = self.collisionNormal(position, velocity)
+        return dampeningFactor * (velocity - 2 * n * np.dot(n, velocity))
+
+    def collisionNormal(self, position, velocity):
         # returns a unit vector that is a surface normal at the point of collision
 
-        v = self.collisionPoint(particle) - self.center
+        v = self.collisionPoint(position, velocity) - self.center
         return v / np.linalg.norm(v)
 
-    def collisionPoint(self, particle):
-        unitV = particle.velocity / np.linalg.norm(particle.velocity)
-        origin = particle.position
+    def collisionPoint(self, position, velocity):
+        unitV = velocity / np.linalg.norm(velocity)
+        origin = position
         distance = 0.0
 
         # this is where it gets tricky... so basically,
@@ -67,19 +94,12 @@ class LatticeIon:
         # distance = -(b / 2) - np.sqrt(b ** 2 - c) # the alternative solution
 
         return (origin + distance * unitV)
-
-    def willCollide(self, particle):
-        # essentially boolean output whether particle is gonna hit given its trajectory OF THAT TICK (as in its current position + velocity * dt)
-        # has the same meat and bones of the method above, but now it outputs a boolean based on the quadratic discriminant formula, b**2 -4ac >= 0.
-        unitV = particle.velocity / np.linalg.norm(particle.velocity)
-
-        d = particle.position - self.center
-
-        a = np.linalg.norm(unitV) ** 2
-        b = 2 * (np.dot(unitV, d))
-        c = np.dot(d, d) - self.radius ** 2
-
-        return (b ** 2 - 4 * (a * c) >= 0)
+    # '''
+   
+    # '''
+    @staticmethod
+    def discriminant(a, b, c):
+        return b ** 2 - 4 * (a * c)
 
     @staticmethod
     def isInWire(point, wire, orientation=None):
@@ -130,11 +150,16 @@ def main():
     print("reflected velocity vector:", n.reflectVector(c))
     """
 
-    start = np.array([0, 0, 0])
-    lengthV = np.array([3E-9, 0, 0])
-    c = Wire(start, lengthV, 5E-10)
-    print(LatticeIon.generateLatticePoints(c))
+    # start = np.array([0, 0, 0])
+    # lengthV = np.array([3E-9, 0, 0])
+    # c = Wire(start, lengthV, 5E-10)
+    # print(LatticeIon.generateLatticePoints(c))
+    prevPos = np.array([0, 0, 0])
+    pos = np.array([0, 0, 5])
+    v = pos - prevPos
 
+    lat = LatticeIon(np.array([0,2 / (2 ** 0.5), 5]), 2, 1)
+    print(lat.checkCollision(prevPos, pos, v))
 
 if __name__ == "__main__":
     main()
