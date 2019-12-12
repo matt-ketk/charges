@@ -107,6 +107,8 @@ class Wire(Conductor):
         normal[z] = 0
         normal /= self.r
 
+        #print(vel, np.sum(normal ** 2 ))
+
         newVel = dampeningFactor * (vel - 2 * normal * np.dot(normal, vel))
         return colPos, newVel
     

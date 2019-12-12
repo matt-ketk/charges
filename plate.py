@@ -3,6 +3,7 @@ import numpy as np
 from conductor import Conductor
 from constants import Constants
 
+
 class Plate(Conductor):
 	vertex1 = tuple()  # 3D coordinate of one vertex
 	vertex2 = tuple()  # 3D coordinate of the opposing vertex
@@ -29,12 +30,12 @@ class Plate(Conductor):
 				for z in (vertex1[2], vertex2[2]):
 					self.vertices.append(np.array((x, y, z)))
 		self.faces = []
-		self.faces.append(tuple(v for v in self.vertices[:4]))
-		self.faces.append(tuple(v for v in self.vertices[4:]))
-		self.faces.append(tuple(self.vertices[i] for i in range(len(self.vertices)) if i % 4 < 2))
-		self.faces.append(tuple(self.vertices[i] for i in range(len(self.vertices)) if i % 4 >= 2))
-		self.faces.append(tuple(v for v in self.vertices[::2]))
-		self.faces.append(tuple(v for v in self.vertices[1::2]))
+		self.faces.append(tuple(self.vertices[i] for i in [0, 1, 3, 2]))
+		self.faces.append(tuple(self.vertices[i] for i in [4, 5, 7, 6]))
+		self.faces.append(tuple(self.vertices[i] for i in [0, 1, 5, 4]))
+		self.faces.append(tuple(self.vertices[i] for i in [2, 3, 7, 6]))
+		self.faces.append(tuple(self.vertices[i] for i in [0, 2, 6, 4]))
+		self.faces.append(tuple(self.vertices[i] for i in [1, 3, 7, 5]))
 
 		super(Plate, self).__init__(resistivity=resistivity)
 
@@ -61,58 +62,57 @@ class Plate(Conductor):
 		return col[1][0], col[1][1], col[0]
 
 	@staticmethod
-	def rectangleCollision(prevPos, pos, rCorners, velocity, dampingFactor=1):
+	def rectangleCollision(prevPos, pos, rCorners, velocity, dampeningFactor=1):
 		"""
-		checks to see if a particle collided with the defined rectangle and gives you that particles updated info
-		rectangle must be parallel to xy, xz, or yz for now
+		checks to see if a particle collided with the defined rectangle and gives you that particle's updated info
 		:param prevPos: position of a particle at the previous iteration
 		:param pos: position of that particle at the current iteration
 		:param rCorners: a tuple of the corner points of a rectangle in 3D space to check for collisions
+		stored such that ADJACENT CORNERS IN THE LIST ARE ADJACENT IN THE RECTANGLE
 		:param velocity: the initial velocity vector of the particle
-		:param dampingFactor: the factor by which the particle's velocity decreases upon impact
+		:param dampeningFactor: the factor by which the particle's velocity decreases upon impact
 		:return: the collision position of the particle and its new velocity. if no collision returns None
 		"""
-		# find orientation of the rectangle
-		for i in range(3):
-			if all(rCorners[0][i] == rCorners[j][i] for j in range(4)):
-				z = i
-				break
-		if z != 0:
-			x = 0
-			if z != 1:
-				y = 1
-			else:
-				y = 2
-		else:
-			x = 1
-			y = 2
-		planeZ = rCorners[0][z]
-		xBounds = (min(c[x] for c in rCorners), max(c[x] for c in rCorners))
-		yBounds = (min(c[y] for c in rCorners), max(c[y] for c in rCorners))
+		basis = list()
+		basis.append(rCorners[1] - rCorners[0])
+		basis.append(rCorners[2] - rCorners[1])
+		normal = np.cross(basis[0], basis[1])
+		normal = normal / np.linalg.norm(normal)
+		basis.append(normal)
 
-		# ###---find coordinate of collision---###
-		m = (prevPos[y] - pos[y]) / (prevPos[x] - pos[x])
-		# calculate with x and y swapped if the slope is infinite so now the slope is 0
-		if np.isinf(m):
-			x, y = y, x
-			m = (prevPos[y] - pos[y]) / (prevPos[x] - pos[x])
-		if Plate.inInterval(planeZ, (prevPos[z], pos[z])):
-			# this tells you how far along the path between the 2 points the collision occurred (assuming infinite plane)
-			zRatio = abs(prevPos[z] - planeZ) / abs(prevPos[z] - pos[z])
-			if np.isinf(zRatio):
-				return None
-			xCol = zRatio * (pos[x] - prevPos[x]) + prevPos[x]
-		else:
+		# find the value of t that satisfies both:
+		# 	colPos = prevPos + velocity*t
+		# 	normal dot (colPos - pointOnPlane) = 0
+		# where colPos represents the collision point
+		# all of this is still in the original basis
+		pointOnPlane = rCorners[0]  # arbitrary
+		nDotV = np.dot(normal, velocity)
+		if nDotV == 0:
 			return None
+		t = np.dot(normal, pointOnPlane - prevPos) / nDotV
+		colPos = prevPos + velocity * t
 
-		yCol = m * (xCol - prevPos[x]) + prevPos[y]
-		if Plate.inInterval(xCol, xBounds) and Plate.inInterval(yCol, yBounds):
-			colPos = np.zeros(3)
-			colPos[x] = xCol
-			colPos[y] = yCol
-			colPos[z] = planeZ
-			newVelocity = velocity * dampingFactor
-			newVelocity[z] *= -1
+		if pos[0] - prevPos[0] != 0:
+			if not Plate.inInterval(colPos[0], (pos[0], prevPos[0])):
+				return None
+		elif pos[1] - prevPos[1] != 0:
+			if not Plate.inInterval(colPos[1], (pos[1], prevPos[1])):
+				return None
+		else:
+			if not Plate.inInterval(colPos[2], (pos[2], prevPos[2])):
+				return None
+
+		basis = np.array(basis, dtype=float)
+		changeBasisM = basis.transpose()
+		invChangeBasisM = np.linalg.inv(changeBasisM)
+		newRectCorners = tuple(invChangeBasisM @ corner for corner in rCorners)
+		newColPos = invChangeBasisM @ colPos
+
+		xBounds = (min(c[0] for c in newRectCorners), max(c[0] for c in newRectCorners))
+		yBounds = (min(c[1] for c in newRectCorners), max(c[1] for c in newRectCorners))
+
+		if Plate.inInterval(newColPos[0], xBounds) and Plate.inInterval(newColPos[1], yBounds):
+			newVelocity = dampeningFactor * (velocity - 2 * normal * np.dot(normal, velocity))
 			return colPos, newVelocity
 		return None
 
@@ -128,3 +128,17 @@ class Plate(Conductor):
 		if inclusive:
 			return min(bounds[0], bounds[1]) <= x <= max(bounds[0], bounds[1])
 		return min(bounds[0], bounds[1]) < x < max(bounds[0], bounds[1])
+
+
+def main():
+	prevPos = np.array([1, 3, 1])
+	pos = np.array([1, 3, 5])
+	v = pos - prevPos
+	print("velocity:", v)
+	rCorners = np.array([[1, 1, 1], [3, 3, 3], [1, 5, 5], [-1, 3, 3]])
+	print("rectangle corners:", rCorners)
+	print("collision:", Plate.rectangleCollision(prevPos, pos, rCorners, v))
+
+
+if __name__ == "__main__":
+	main()
