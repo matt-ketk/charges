@@ -4,6 +4,9 @@ from constants import Constants
 from conductor import Conductor
 from plate import Plate
 
+from pyquaternion import Quaternion as Q
+
+
 class Wire(Conductor):
     def __init__(self, start, lengthV, r, resistivity=Constants.COPPER_RESISTIVITY):
         """
@@ -137,3 +140,54 @@ class Wire(Conductor):
         if disc == 0:
             return -b / (2 * a),
         return (-b + disc ** 0.5) / (2 * a), (-b - disc ** 0.5) / (2 * a)
+
+    def draw(self, environment, color, thickness = 1):
+        l = self.lengthV
+        ln = np.sqrt(np.sum(l ** 2))
+
+        # Form the rotation axis by getting the cross product between the z-axis vector and the normalized length vector
+        rotationAxis = np.cross(np.array([0, 0, 1]), l / ln)
+
+        # get the magnitude of rotationAxis ( sin(theta) )
+        # normalize rotationAxis
+        rotationMag = np.sqrt(np.sum(rotationAxis ** 2))
+        angle = np.math.asin(rotationMag)
+
+        # Create a quaternion
+        rotationAxis_ = rotationAxis / rotationMag
+        rotationQ = Q(axis = rotationAxis, angle = angle)
+
+        # Draw two circles centered around the point and rotate them by the rotation quaternion
+        points = [[], []]
+        for i in range (20):
+            p = rotationQ.rotate(np.array([np.sin(i/20 * 2 * 3.1415) * self.r, np.cos(i/20 * 2 * 3.1415) * self.r, 0]))
+            points[0].append(p + self.start)
+
+            p = rotationQ.rotate(np.array([np.sin(i/20 * 2 * 3.1415) * self.r, np.cos(i/20 * 2 * 3.1415) * self.r, ln]))
+            points[1].append(p + self.start)
+        
+        environment.drawMesh(points, color)
+
+        tpoints = environment.transformPoint(np.array([self.start, self.end]))
+
+        if (abs(tpoints[1][0] - tpoints[0][0]) < 0.01):
+            offset = np.array([self.r, 0]) * environment.zoom 
+        elif (abs(tpoints[1][1] - tpoints[0][1]) < 0.01):
+            offset = np.array([0, self.r]) * environment.zoom 
+
+        else:
+            slope = (tpoints[1][1] - tpoints[0][1]) / (tpoints[1][0] - tpoints[0][0])
+            perp = - 1 / slope
+
+            norm = np.sqrt(1 + 1 / slope ** 2)
+
+            offset = np.array([self.r / norm, perp * self.r / norm]) * environment.zoom 
+
+        l1 = np.array([tpoints[0] + offset, tpoints[1] + offset]).astype(int)
+        l2 = np.array([tpoints[0] - offset, tpoints[1] - offset]).astype(int)
+        
+        points = [[l1[0], l1[1]], [l2[0], l2[1]]]
+        environment.drawMeshRaw(points, color)
+
+
+    

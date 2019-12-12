@@ -19,7 +19,7 @@ def main():
   charges = []
   masses = []
   stationary = []
-  w = Wire (np.array([0,0,-20E-10]), np.array([0,0,4E-9]), 4E-10)
+  w = Wire (np.array([0,0,0E-10]), np.array([4E-9,0,0]), 4E-10)
   
   lattice = LatticeIon.generateLatticePoints(w)
 
@@ -127,11 +127,8 @@ def main():
             print(newVel, colPos, coords[i])
 
           collision = bool(result)
-
-         
-        # also a magnetic field in the positive z-axis, [0, 0, 1]
-        #print ("\n")
-
+        
+      
         """
         ts = 0.1
         accs =[ ]
@@ -168,7 +165,8 @@ def main():
 
           #env.drawParticle(pos2, color2, radius = 6)
 
-        env.drawCylinder(w.start, w.end, w.r, color = (255, 100, 100))
+        env.drawObject(w, color = (255, 100, 100))
+        #env.drawCylinder(w.start, w.end, w.r, color = (255, 100, 100))
 
         pygame.display.flip()                
 
