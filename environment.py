@@ -102,66 +102,25 @@ class Environment:
                   else:
                     pygame.gfxdraw.polygon(self.surface, p_, color)
     
-    def drawCylinder(self, start, end, radius, color):
+    def drawObject(self, obj, color, thickness = 1):
+        obj.draw(self, color, thickness)
+     
+    def drawMeshRaw(self, polygons, color):
+        for p in polygons:
+            # Each polygon has some number of points, if it's just 2 then draw a line
+            if len(p) == 2:
+                  p1, p2 = p
+                  
+                  pygame.gfxdraw.line(self.surface, p1[0], p1[1], p2[0], p2[1], color)
+                
+            else:
+                  p_ = p
+                  
+                  if filled:
+                    pygame.gfxdraw.filled_polygon(self.surface, p_, color)
 
-        # cross product of two vectors in 3d
-        """
-        i  j  k
-        a  b  c
-        d  e  f 
-
-        = i(bf - ec) + j(af - dc) + k(ae - db)
-
-        cross product: |a x b| = |a||b|sin(t) = sin(t)
-        perpendicular vectors would have sin(t) = 1, assuming both a and b are unit 
-
-        solving for the equation, where a, b, c are known
-        (bf - ec) ** 2 + (af - dc) ** 2 + (ae - db) ** 2 = 1
-
-        (f - e) ** 2 + (f - d) ** 2 + (e - d) ** 2 = 1
-
-
-        f**2 - 2fe + e**2 + f**2 - 2fd + d**2 + e**2 - 2ed + d**2 = 1
-        2f**2 + 2e**2 + 2d**2 - 2fe - 2fd - 2ed = 1
-        """
-
-
-        # Draw two circles centered around the point
-        points = [[], []]
-        for i in range (20):
-            p = np.array([np.sin(i/20 * 2 * 3.1415) * radius, np.cos(i/20 * 2 * 3.1415) * radius, 0]) + start
-            points[0].append(p)
-
-            p = np.array([np.sin(i/20 * 2 * 3.1415) * radius, np.cos(i/20 * 2 * 3.1415) * radius, 0]) + end 
-            points[1].append(p)
-        
-        self.drawMesh(points, color)
-
-        tpoints = self.transformPoint(np.array([start, end]))
-
-        if (abs(tpoints[1][0] - tpoints[0][0]) < 0.01):
-            offset = np.array([radius, 0]) * self.zoom 
-        elif (abs(tpoints[1][1] - tpoints[0][1]) < 0.01):
-            offset = np.array([0, radius]) * self.zoom 
-
-        else:
-            slope = (tpoints[1][1] - tpoints[0][1]) / (tpoints[1][0] - tpoints[0][0])
-            perp = - 1 / slope
-
-            norm = np.sqrt(1 + 1 / slope ** 2)
-
-            offset = np.array([radius / norm, perp * radius / norm]) * self.zoom 
-        
-
-        l1 = np.array([tpoints[0] + offset, tpoints[1] + offset]).astype(int)
-        l2 = np.array([tpoints[0] - offset, tpoints[1] - offset]).astype(int)
-    
-        pygame.gfxdraw.line(self.surface, l1[0][0], l1[0][1], l1[1][0], l1[1][1], color)
-        pygame.gfxdraw.line(self.surface, l2[0][0], l2[0][1], l2[1][0], l2[1][1], color)
-
-
-    
-
+                  else:
+                    pygame.gfxdraw.polygon(self.surface, p_, color)
      
         
         

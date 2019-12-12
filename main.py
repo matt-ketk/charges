@@ -160,7 +160,8 @@ def main():
             
             env.drawParticle(pos, color, radius = r)
 
-        env.drawCylinder(w.start, w.end, w.r, color = (255, 100, 100))
+        env.drawObject(w, color = (255, 100, 100))
+        #env.drawCylinder(w.start, w.end, w.r, color = (255, 100, 100))
 
         pygame.display.flip()                
 
