@@ -162,6 +162,7 @@ def main():
           
           
           env.drawParticle(pos, color, radius = r)
+          # I just made a stupid change 
 
           #env.drawParticle(pos2, color2, radius = 6)
 
