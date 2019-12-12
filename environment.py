@@ -71,9 +71,12 @@ class Environment:
         """
 
         position_ = self.transformPoint(position)[0]
+        
+        if not self.surface.get_rect().collidepoint(position_):
+            return
 
         # We only display the projection of the particle onto the XY plane
-        print (position_[0], position_[1], radius)
+        #print (position_[0], position_[1], radius)
         if radius == 0:
             self.surface.set_at((position_[0], position_[1]), color)
         else:

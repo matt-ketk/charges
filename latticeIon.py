@@ -1,6 +1,7 @@
 import numpy as np
 
 from wire import Wire
+from plate import Plate
 from charge import Charge
 from constants import Constants
 
@@ -27,6 +28,10 @@ class LatticeIon:
     )
 
     def __init__(self, center, radius, charge, dampeningFactor):
+        '''
+        center: numpy array of length 3 
+        '''
+
         self.center = center
         self.radius = radius
         self.charge = charge
@@ -95,6 +100,14 @@ class LatticeIon:
         return inLength and inCircle
 
     @staticmethod
+    def isInPlate(point, plate):
+        x, y, z = (0, 1, 2)
+        inX = (plate.vertex1[x] <= point[x] <= plate.vertex2[x]) or (plate.vertex1[x] >= point[x] >= plate.vertex2[x])
+        inY = (plate.vertex1[y] <= point[y] <= plate.vertex2[y]) or (plate.vertex1[y] >= point[y] >= plate.vertex2[y])
+        inZ = (plate.vertex1[z] <= point[z] <= plate.vertex2[z]) or (plate.vertex1[z] >= point[z] >= plate.vertex2[z])
+        return inX and inY and inZ
+
+    @staticmethod
     def generateLatticePoints(cond):
         if type(cond) is Wire:
             latticePoints = set()
@@ -113,8 +126,27 @@ class LatticeIon:
                 for relPoint in LatticeIon.COPPER_LATTICE_UNIT:
                     p = center + relPoint
                     if LatticeIon.isInWire(p, cond, orientation=(x, y, z)):
-                        latticePoints.add(tuple(p))
-            return [LatticeIon(p, Constants.COPPER_ION_RADIUS, Constants.E, 1) for p in latticePoints]
+                        latticePoints.add(tuple(((center + relPoint) / LatticeIon.COPD).astype(int)))
+            return [LatticeIon(np.array(p) * LatticeIon.COPD, Constants.COPPER_ION_RADIUS, Constants.E, 1) for p in latticePoints]
+        if type(cond) is Plate:
+            latticePoints = set()
+            centers = []
+            x, y, z = (0, 1, 2)
+            for k in np.arange(cond.vertex1[z], cond.vertex2[z], 2 * LatticeIon.COPD * np.sign(cond.vertex2[z] - cond.vertex1[z])):
+                for j in np.arange(cond.vertex1[y], cond.vertex2[y], 2 * LatticeIon.COPD * np.sign(cond.vertex2[y] - cond.vertex1[y])):
+                    for i in np.arange(cond.vertex1[x], cond.vertex2[x], 2 * LatticeIon.COPD * np.sign(cond.vertex2[x] - cond.vertex1[x])):
+                        center = [0, 0, 0]
+                        center[x] = i + LatticeIon.COPD
+                        center[y] = j + LatticeIon.COPD
+                        center[z] = k + LatticeIon.COPD
+                        centers.append(np.array(center))
+            print (centers)
+            for center in centers:
+                for relPoint in LatticeIon.COPPER_LATTICE_UNIT:
+                    p = center + relPoint
+                    if LatticeIon.isInPlate(p, cond):
+                        latticePoints.add(tuple(((center + relPoint) / LatticeIon.COPD).astype(int)))
+            return [LatticeIon(np.array(p) * LatticeIon.COPD, Constants.COPPER_ION_RADIUS, Constants.E, 1) for p in latticePoints]
         else:
             raise NotImplementedError("This kind of conductor is not yet supported")
     

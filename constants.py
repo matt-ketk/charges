@@ -18,5 +18,5 @@ class Constants:
     #COPPER_ION_RADIUS = 0.2  # m (fake)
     COPPER_MASS = 1.055E-25 # Kg
 
-    COPPER_CUBE_SIZE = 5.308E-10  # m 
+    COPPER_CUBE_SIZE = 2.6E-8 # m
     COPPER_ION_RADIUS = 9.1E-11  # m
