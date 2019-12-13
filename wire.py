@@ -148,14 +148,22 @@ class Wire(Conductor):
         # Form the rotation axis by getting the cross product between the z-axis vector and the normalized length vector
         rotationAxis = np.cross(np.array([0, 0, 1]), l / ln)
 
+
         # get the magnitude of rotationAxis ( sin(theta) )
         # normalize rotationAxis
         rotationMag = np.sqrt(np.sum(rotationAxis ** 2))
+        
         angle = np.math.asin(rotationMag)
 
         # Create a quaternion
-        rotationAxis_ = rotationAxis / rotationMag
-        rotationQ = Q(axis = rotationAxis, angle = angle)
+        if l[2] < 0:
+            angle = np.pi/2 - angle
+        if rotationMag == 0:
+            angle = 0
+            rotationAxis_ = np.array([0,0,1])
+        else:
+            rotationAxis_ = rotationAxis / rotationMag
+        rotationQ = Q(axis = rotationAxis_, angle = angle)
 
         # Draw two circles centered around the point and rotate them by the rotation quaternion
         points = [[], []]

@@ -28,7 +28,7 @@ class LatticeIon:
          ]
     )
 
-    def __init__(self, center, radius, charge, dampeningFactor):
+    def __init__(self, center, radius, charge, mass, dampeningFactor):
         '''
         center: numpy array of length 3 
         '''
@@ -36,6 +36,7 @@ class LatticeIon:
         self.center = center
         self.radius = radius
         self.charge = charge
+        self.mass = mass
         # self.dampeningFactor = dampeningFactor
 
     def checkCollision(self, prevPos, pos, velocity, dampeningFactor=1):
@@ -121,6 +122,7 @@ class LatticeIon:
 
     @staticmethod
     def isInPlate(point, plate):
+        # this does not work for non-orthogonal plates :(
         x, y, z = (0, 1, 2)
         inX = (plate.vertex1[x] <= point[x] <= plate.vertex2[x]) or (plate.vertex1[x] >= point[x] >= plate.vertex2[x])
         inY = (plate.vertex1[y] <= point[y] <= plate.vertex2[y]) or (plate.vertex1[y] >= point[y] >= plate.vertex2[y])
@@ -128,7 +130,7 @@ class LatticeIon:
         return inX and inY and inZ
 
     @staticmethod
-    def generateLatticePoints(cond):
+    def generateLatticePoints(cond, radius = Constants.COPPER_ION_RADIUS, charge = Constants.E, mass = Constants.COPPER_MASS, offset = np.array([0,0,0])):
         if type(cond) is Wire:
             latticePoints = set()
             centers = []
@@ -136,10 +138,10 @@ class LatticeIon:
             for k in np.arange(cond.start[z], cond.end[z], 2 * LatticeIon.COPD):
                 for j in np.arange(cond.start[y] - cond.r, cond.start[y] + cond.r, 2 * LatticeIon.COPD):
                     for i in np.arange(cond.start[x] - cond.r, cond.start[x] + cond.r, 2 * LatticeIon.COPD):
-                        center = [0, 0, 0]
-                        center[x] = i + LatticeIon.COPD
-                        center[y] = j + LatticeIon.COPD
-                        center[z] = k + LatticeIon.COPD
+                        center = np.copy(offset)
+                        center[x] += i + LatticeIon.COPD
+                        center[y] += j + LatticeIon.COPD
+                        center[z] += k + LatticeIon.COPD
                         centers.append(np.array(center))
 
             for center in centers:
@@ -147,7 +149,7 @@ class LatticeIon:
                     p = center + relPoint
                     if LatticeIon.isInWire(p, cond, orientation=(x, y, z)):
                         latticePoints.add(tuple(((center + relPoint) / LatticeIon.COPD).astype(int)))
-            return [LatticeIon(np.array(p) * LatticeIon.COPD, Constants.COPPER_ION_RADIUS, Constants.E, 1) for p in latticePoints]
+            return [LatticeIon(np.array(p) * LatticeIon.COPD, radius, charge, mass, 1) for p in latticePoints]
         if type(cond) is Plate:
             latticePoints = set()
             centers = []
@@ -155,24 +157,25 @@ class LatticeIon:
             for k in np.arange(cond.vertex1[z], cond.vertex2[z], 2 * LatticeIon.COPD * np.sign(cond.vertex2[z] - cond.vertex1[z])):
                 for j in np.arange(cond.vertex1[y], cond.vertex2[y], 2 * LatticeIon.COPD * np.sign(cond.vertex2[y] - cond.vertex1[y])):
                     for i in np.arange(cond.vertex1[x], cond.vertex2[x], 2 * LatticeIon.COPD * np.sign(cond.vertex2[x] - cond.vertex1[x])):
-                        center = [0, 0, 0]
-                        center[x] = i + LatticeIon.COPD
-                        center[y] = j + LatticeIon.COPD
-                        center[z] = k + LatticeIon.COPD
+                        center = np.copy(offset)
+                        center[x] += i + LatticeIon.COPD
+                        center[y] += j + LatticeIon.COPD
+                        center[z] += k + LatticeIon.COPD
                         centers.append(np.array(center))
             print (centers)
+            print (len(centers))
             for center in centers:
                 for relPoint in LatticeIon.COPPER_LATTICE_UNIT:
                     p = center + relPoint
                     if LatticeIon.isInPlate(p, cond):
                         latticePoints.add(tuple(((center + relPoint) / LatticeIon.COPD).astype(int)))
-            return [LatticeIon(np.array(p) * LatticeIon.COPD, Constants.COPPER_ION_RADIUS, Constants.E, 1) for p in latticePoints]
+            return [LatticeIon(np.array(p) * LatticeIon.COPD, radius, charge, mass, 1) for p in latticePoints]
         else:
             raise NotImplementedError("This kind of conductor is not yet supported")
     
 
     def compile(self):
-        return (self.center, self.charge, Constants.COPPER_MASS, 1)
+        return (self.center, self.charge, self.mass, 1)
 
 def main():
     """c = Charge(1.0, np.zeros(3), np.array([1, 1, 1]))
