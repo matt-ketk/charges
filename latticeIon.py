@@ -39,7 +39,7 @@ class LatticeIon:
         self.mass = mass
         # self.dampeningFactor = dampeningFactor
 
-    def checkCollision(self, prevPos, pos, velocity, dampeningFactor=1):
+    def checkCollision(self, prevPos, pos, velocity, dampeningFactor=.9):
         # essentially boolean output whether particle is gonna hit given its trajectory OF THAT TICK (as in its current position + velocity * dt)
         # has the same meat and bones of the method above, but now it outputs a boolean based on the quadratic discriminant formula, b**2 -4ac >= 0.
         unitV = velocity / np.linalg.norm(velocity)
@@ -66,7 +66,7 @@ class LatticeIon:
                 return None
         return colPos, self.reflectVector(colPos, velocity, dampeningFactor=dampeningFactor)
 
-    def reflectVector(self, position, velocity, dampeningFactor=1):
+    def reflectVector(self, position, velocity, dampeningFactor = 1): 
         n = self.collisionNormal(position, velocity)
         return dampeningFactor * (velocity - 2 * n * np.dot(n, velocity))
 
@@ -130,7 +130,7 @@ class LatticeIon:
         return inX and inY and inZ
 
     @staticmethod
-    def generateLatticePoints(cond, radius = Constants.COPPER_ION_RADIUS, charge = Constants.E, mass = Constants.COPPER_MASS, offset = np.array([0,0,0])):
+    def generateLatticePoints(cond, radius = Constants.COPPER_ION_RADIUS, charge = Constants.E, mass = Constants.COPPER_MASS, offset = np.array([0.,0.,0.])):
         if type(cond) is Wire:
             latticePoints = set()
             centers = []
@@ -138,18 +138,23 @@ class LatticeIon:
             for k in np.arange(cond.start[z], cond.end[z], 2 * LatticeIon.COPD):
                 for j in np.arange(cond.start[y] - cond.r, cond.start[y] + cond.r, 2 * LatticeIon.COPD):
                     for i in np.arange(cond.start[x] - cond.r, cond.start[x] + cond.r, 2 * LatticeIon.COPD):
-                        center = np.copy(offset)
+                        center = [0,0,0]
                         center[x] += i + LatticeIon.COPD
                         center[y] += j + LatticeIon.COPD
                         center[z] += k + LatticeIon.COPD
                         centers.append(np.array(center))
-
+            print (len(centers))
+            print (centers)
             for center in centers:
                 for relPoint in LatticeIon.COPPER_LATTICE_UNIT:
                     p = center + relPoint
                     if LatticeIon.isInWire(p, cond, orientation=(x, y, z)):
-                        latticePoints.add(tuple(((center + relPoint) / LatticeIon.COPD).astype(int)))
-            return [LatticeIon(np.array(p) * LatticeIon.COPD, radius, charge, mass, 1) for p in latticePoints]
+                        point = tuple(((center + relPoint) / LatticeIon.COPD * 100).astype(int))
+                        if point in latticePoints:
+                            print (point)
+                        latticePoints.add(point)
+                    
+            return [LatticeIon(np.array(p) * LatticeIon.COPD / 100 + offset, radius, charge, mass, 1) for p in latticePoints]
         if type(cond) is Plate:
             latticePoints = set()
             centers = []
