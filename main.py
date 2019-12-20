@@ -21,10 +21,13 @@ def main():
 
     wireLength = 8E-8
     wireRadius = 4E-8
+    iHat = [[4E-9, 4E-9, 4E-9], [8E-9, 4E-9, 4E-9]]
+    jHat = [[4E-9, 4E-9, 4E-9], [4E-9, 8E-9, 4E-9]]
+    kHat = [[4E-9, 4E-9, 4E-9], [4E-9, 4E-9, 8E-9]]
 
-    w = Wire (np.array([0,0,-wireLength / 2]), np.array([0,0,wireLength]), wireRadius)
+    w = Wire (np.array([0,0,-wireLength / 2]), np.array([wireLength, wireLength, wireLength]), wireRadius)
     latticeIons = LatticeIon.generateLatticePoints(w)
-    electrons = LatticeIon.generateLatticePoints(w, charge = -Constants.E, mass = Constants.MASS_ELECTRON, offset = np.array([0.2E-8, 0.2E-8, 0.2E-8]))
+    electrons = LatticeIon.generateLatticePoints(w, charge = -Constants.E, mass = Constants.MASS_ELECTRON, offset = np.array([0.2E-8, 0.2E-8, 0.2E-8]))[:8]
 
     '''
     p1 = Plate (np.array([-1E-7, -1E-7, 0.25E-7]), np.array([0E-7, 0E-7, 0.5E-7]))
@@ -146,12 +149,12 @@ def main():
             
         prevCoords = coords
         vel = vel + deltaVelocity(dt, f, masses).T * (1 - stationary)
-        coords = coords + deltaPosition(dt, f, vel.T, masses).T * (1  -stationary)
+        coords = coords + deltaPosition(dt, f, vel.T, masses).T * (1 - stationary)
 
         # collision detection for wire  
         for i in range (n):
             result = w.checkCollision(prevCoords[i], coords[i], vel[i])
-            if (coords[i][0] ** 2 +coords[i][1]**2 > w.r**2) and not result:
+            if result:
                 w.checkCollision(prevCoords[i], coords[i], vel[i])
             if result:
                 colPos, newVel = result
@@ -183,6 +186,10 @@ def main():
                 r = 1
             
             env.drawParticle(pos, color, radius = r)
+
+        env.drawMesh([iHat], color=(255, 0, 0))
+        env.drawMesh([jHat], color=(0, 255, 0))
+        env.drawMesh([kHat], color=(0, 0, 255))
 
         #env.drawObject(w, color = (255, 100, 100))
         #env.drawCylinder(w.start, w.end, w.r, color = (255, 100, 100))

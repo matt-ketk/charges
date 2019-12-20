@@ -16,8 +16,6 @@ class Wire(Conductor):
         """
         super(Wire, self).__init__(resistivity=resistivity)
 
-        if len([i for i in lengthV if i != 0]) != 1:
-            raise NotImplementedError("non-orthogonal wires are not yet supported")
         self.start = start
         self.lengthV = lengthV
         self.end = start + lengthV
@@ -69,18 +67,19 @@ class Wire(Conductor):
 
         basis = list()
         # generate some random vector that is not in the same direction as lengthV
-        randMatrix = np.array([[1, 1, 0],
-                               [0, 1, 2],
-                               [-1, -1, 2]])
-        randVec = randMatrix @ self.lengthV
-        basis.append(np.cross(self.lengthV, randVec))
+        # randMatrix = np.array([[1, 1, 0],
+        #                        [0, 1, 2],
+        #                        [-1, -1, 2]])
+        # randVec = randMatrix @ self.lengthV
+        randVec = np.array([0, 0, 1])
+        basis.append(-np.cross(self.lengthV, randVec))
         basis[0] /= np.linalg.norm(basis[0])
         basis.append(np.cross(self.lengthV, basis[0]))
         basis[1] /= np.linalg.norm(basis[1])
         basis.append(self.lengthV / np.linalg.norm(self.lengthV))
         basis = np.array(basis, dtype=float)
-        changeBasisM = basis.transpose()
-        invChangeBasisM = np.linalg.inv(changeBasisM)
+        invChangeBasisM = basis.transpose()
+        changeBasisM = np.linalg.inv(invChangeBasisM)
 
         nPrevPos = changeBasisM @ prevPos
         nPos = changeBasisM @ pos
@@ -95,10 +94,10 @@ class Wire(Conductor):
 
         a = -m * nPrevPos[0] + nPrevPos[1] - nStart[1]
         mz = (nPrevPos[2] - nPos[2]) / (nPrevPos[0] - nPos[0])
-        if np.isinf(mz):
-            return None
+        # if np.isinf(mz):
+        #     return None
 
-        xColTemp = Wire.quad(1 + m ** 2, 2 * (a * m + nStart[0]), a ** 2 + nStart[0] ** 2 - self.r ** 2)
+        xColTemp = Wire.quad(1 + m ** 2, 2 * (a + nStart[0]), a ** 2 + nStart[0] ** 2 - self.r ** 2)
 
         withinSegment = False
         if len(xColTemp) == 0 or len(xColTemp) == 1:
@@ -127,7 +126,7 @@ class Wire(Conductor):
         normal[0] = tempColPos[0] - nStart[0]
         normal[1] = tempColPos[1] - nStart[1]
         normal[2] = 0
-        normal /= self.r
+        normal /= np.linalg.norm(normal)
 
         tempVel = dampeningFactor * (nVel - 2 * normal * np.dot(normal, nVel))
 
