@@ -3,14 +3,14 @@ from constants import Constants
 
 def forces(coords, charges):
     '''
-    coords: a 2D numpy array with columns X, Y, Z and rows for each particle
+    coords: a 2D numpy array with columns X, Y and rows for each particle
       [ [x1, y1],
         [x2, y2],
         ...,
         xN, yN] ]
     charges: a numpy array containing the charges of each particle
 
-    returns a 2D numpy (float) array of size N where the ith row contains the vector sum of the other particles' electrostatic forces [Fx, Fy, Fz] on the ith particle
+    returns a 2D numpy (float) array of size N where the ith row contains the vector sum of the other particles' electrostatic forces [Fx, Fy] on the ith particle
     '''
 
     N = coords.shape[0] # number of particles
@@ -43,11 +43,11 @@ def forces(coords, charges):
 def deltaPosition(dt, forcesList, velList, massList):
     '''
     dt: the timestep (which will be determined by pygame)
-    forcesList: a 2D (shape Nx3) numpy array of forces on each particle, the ith row contains [Fx, Fy, Fz] for the ith particle
-    velList: a 2D (shape Nx3) numpy array of the original velocities of each particle, [vx, vy, vz]
+    forcesList: a 2D (shape Nx2) numpy array of forces on each particle, the ith row contains [Fx, Fy] for the ith particle
+    velList: a 2D (shape Nx2) numpy array of the original velocities of each particle, [vx, vy]
     massList: a numpy array of length N of the masses of each particle 
 
-    returns a 2D (shape Nx3) of the change in positions of each particle 
+    returns a 2D (shape Nx2) of the change in positions of each particle 
     '''
     # make Nx1 array of masses
     # EDIT: Deleted the transpose, so shape is now 1 x N
@@ -63,10 +63,10 @@ def deltaPosition(dt, forcesList, velList, massList):
 def deltaVelocity(dt, forcesList, massList):
     '''
     dt: the timestep (which will be determined by pygame)
-    forcesList: a 2D (shape Nx3) numpy array of forces on each particle, the ith row contains [Fx, Fy, Fz] for the ith particle
+    forcesList: a 2D (shape Nx2) numpy array of forces on each particle, the ith row contains [Fx, Fy] for the ith particle
     massList: a numpy array of length N of the masses of each particle 
 
-    returns a 2D (shape Nx3) of the change in positions of each particle 
+    returns a 2D (shape Nx2) of the change in positions of each particle 
     '''
     # make Nx1 array of masses
     # EDIT: Deleted the transpose, so shape is now 1 x N
