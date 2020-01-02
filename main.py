@@ -7,7 +7,8 @@ from environment import Environment
 from charge import Charge
 from p2p import forces, deltaPosition, deltaVelocity
 from constants import Constants
-# from wire import Wire
+
+from wire import Wire
 # from plate import Plate
 # from latticeIon import LatticeIon
 
@@ -19,9 +20,10 @@ def main():
     masses = []
     stationary = []
 
-    wireLength = 3E-8
-    wireRadius = 3E-8
-    
+    wireLength = 1E-8
+    wireRadius = .0625E-8
+
+    wire0 = Wire(np.array([0,-wireLength/2]), np.array([0,wireLength]), wireRadius)
 
     # protons
     for i in range (2):
@@ -88,22 +90,22 @@ def main():
                 vel = vel + deltaVelocity(dt, f, masses).T * (1 - stationary)
                 coords = coords + deltaPosition(dt, f, vel.T, masses).T * (1  -stationary)
 
-                # # collision detection for wire
-                # for i in range (n):
-                #     if stationary[i][0]:
-                #         continue
-                #     result = w.checkCollision(prevCoords[i], coords[i], vel[i])
-                #     for ion in latticeIons:
-                #         result = ion.checkCollision(prevCoords[i], coords[i], vel[i])
-                #         if result:
-                #             break
-                #     if result:
-                #         colPos, newVel = result
-                #         vel[i] = newVel
-                #
-                #         coords[i] = colPos + 0.01 * dt * newVel
-                #
-                #     collision = bool(result)
+                # collision detection for wire
+                for i in range (n):
+                    if stationary[i][0]:
+                        continue
+                    result = wire0.checkCollision(prevCoords[i], coords[i], vel[i])
+                    # for ion in latticeIons:
+                    #     result = ion.checkCollision(prevCoords[i], coords[i], vel[i])
+                    #     if result:
+                    #         break
+                    if result:
+                        colPos, newVel = result
+                        vel[i] = newVel
+                
+                        coords[i] = colPos + 0.01 * dt * newVel
+                
+                    collision = bool(result)
             '''
             # collision detection for plate
             for i in range (n):
@@ -131,7 +133,7 @@ def main():
 
             #env.drawObject(w, color = (255, 100, 100))
             #env.drawCylinder(w.start, w.end, w.r, color = (255, 100, 100))
-            #w.draw(env, color = (255, 100, 100))
+            wire0.draw(env, color=(255, 100, 100))
 
             pygame.display.flip()
 
