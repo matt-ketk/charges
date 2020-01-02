@@ -22,27 +22,10 @@ def main():
     wireLength = 3E-8
     wireRadius = 3E-8
     
-    w = Wire (np.array([0,0,-wireLength / 2]), np.array([0,0,wireLength]), wireRadius)
+    w = Wire(np.array([0, -wireLength / 2]), np.array([0, wireLength]), wireRadius)
     latticeIons = LatticeIon.generateLatticePoints(w)
     
     print ("protons:", len(latticeIons))
-    '''
-    p1 = Plate (np.array([-1E-7, -1E-7, 0.25E-7]), np.array([0E-7, 0E-7, 0.5E-7]))
-    lattice1 = LatticeIon.generateLatticePoints(p1)
-    print (len(lattice1))
-
-    print ("\n")
-    
-    p2 = Plate(np.array([-1E-7, -1E-7, 1.5E-7]), np.array([0E-7, 0E-7, 1.75E-7]))
-    lattice2 = LatticeIon.generateLatticePoints(p2)
-    print (len(lattice2))
-
-    print ("\n")
-
-    p3 = Plate (np.array([-1E-7, -1E-7, 2.75E-7]), np.array([0E-7, 0E-7, 3E-7]))
-    lattice3 = LatticeIon.generateLatticePoints(p3)
-    print (len(lattice3))
-    '''
     electrons = LatticeIon.generateLatticePoints(w, charge = -Constants.E, mass = Constants.MASS_ELECTRON, offset = np.array([.1E-7, .1E-7, .1E-7]))
     print ("electrons:", len(electrons))
     
