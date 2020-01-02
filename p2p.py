@@ -4,10 +4,10 @@ from constants import Constants
 def forces(coords, charges):
     '''
     coords: a 2D numpy array with columns X, Y, Z and rows for each particle
-      [ [x1, y1, z1],
-        [x2, y2, z2],
+      [ [x1, y1],
+        [x2, y2],
         ...,
-        xN, yN, zN] ]
+        xN, yN] ]
     charges: a numpy array containing the charges of each particle
 
     returns a 2D numpy (float) array of size N where the ith row contains the vector sum of the other particles' electrostatic forces [Fx, Fy, Fz] on the ith particle
@@ -19,7 +19,7 @@ def forces(coords, charges):
     # np.array([coords,] * N, dtype = float) is equivalent to np.repeat(coords, N, axis=0)
     coordsRow = np.transpose(np.array([coords,] * N, dtype = float), axes = [2, 1, 0])
     coordsCol = np.transpose(coordsRow, axes = [0, 2, 1])
-    distanceVectors = np.array(coordsRow - coordsCol) # distance vectors in x, y, and z for each particle to each other particle
+    distanceVectors = np.array(coordsRow - coordsCol) # distance vectors in x, y for each particle to each other particle
 
     # find the distances (magnitude only) between each pair of particles
     distances = np.sum(distanceVectors ** 2, axis = 0, keepdims = True) ** 0.5
@@ -33,7 +33,7 @@ def forces(coords, charges):
     #print(distanceVectors.shape, chargeProducts.shape, distances.shape)
 
     # find forces between each pair of particles (3D array)
-    forcesSplit = -1 * Constants.K * distanceVectors * np.divide(chargeProducts, distances**3 + 1E-30) # added 1E-16 to avoid divide by zero error 
+    forcesSplit = -1 * Constants.K * distanceVectors * np.divide(chargeProducts, distances**2 + 1E-30) # added 1E-16 to avoid divide by zero error
 
     # find forces on each particle from by summing the forces from all the other particles from forcesSplit (2D array)
     forces = np.sum(forcesSplit, axis = 2)
@@ -77,4 +77,4 @@ def deltaVelocity(dt, forcesList, massList):
 
     # calculate change in velocity
     deltaVelocities = dt * accelerations
-    return deltaVelocities  
+    return deltaVelocities

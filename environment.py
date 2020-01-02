@@ -17,7 +17,7 @@ class Environment:
 
     def transformPoint(self, position):
 
-        return (position * self.zoom).astype(int)
+        return (position * self.zoom + self.offset).astype(int)
     
     def drawParticle(self, position, color, radius = 1):
         """Draws a particle on screen, accounting for perspective, panning and zoom.
@@ -27,7 +27,7 @@ class Environment:
         radius: an integer
         """
 
-        position_ = self.transformPoint(position)[0]
+        position_ = self.transformPoint(position)
         
         if not self.surface.get_rect().collidepoint(position_):
             return

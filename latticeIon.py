@@ -8,40 +8,23 @@ from plate import Plate
 
 
 class LatticeIon:
-    COPD = Constants.COPPER_CUBE_SIZE / 2
-    COPPER_LATTICE_UNIT = np.array(
-        [
-             [ COPD,  COPD,  COPD],
-             [ COPD,  COPD, -COPD],
-             [ COPD, -COPD, -COPD],
-             [ COPD, -COPD,  COPD],
-             [-COPD, -COPD,  COPD],
-             [-COPD,  COPD,  COPD],
-             [-COPD,  COPD, -COPD],
-             [-COPD, -COPD, -COPD],
-             [ COPD,     0,     0],
-             [-COPD,     0,     0],
-             [    0,  COPD,     0],
-             [    0, -COPD,     0],
-             [    0,     0,  COPD],
-             [    0,     0, -COPD]
-         ]
-    )
 
-    def __init__(self, center, radius, charge, mass, dampeningFactor):
+    def __init__(self, center, radius, charge, mass):
         '''
-        center: numpy array of length 3 
+        center: numpy array of length 2
         '''
 
         self.center = center
         self.radius = radius
         self.charge = charge
         self.mass = mass
-        # self.dampeningFactor = dampeningFactor
 
     def checkCollision(self, prevPos, pos, velocity, dampeningFactor=.9):
-        # essentially boolean output whether particle is gonna hit given its trajectory OF THAT TICK (as in its current position + velocity * dt)
-        # has the same meat and bones of the method above, but now it outputs a boolean based on the quadratic discriminant formula, b**2 -4ac >= 0.
+        """
+        checks for collision of a particle with this ion given its position (as a numpy array) at 2 successive iterations
+        returns: the position of the collision and the particle's new velocity vector. If there was no collision returns None.
+        """
+        # TODO: make the input an array of positions/velocities and use numpy operations rather than a for loop
         unitV = velocity / np.linalg.norm(velocity)
 
         d = prevPos - self.center
