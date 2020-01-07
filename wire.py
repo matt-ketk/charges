@@ -44,26 +44,30 @@ class Wire(Conductor):
             [c, -s],
             [s, c]
         ])
+
     def checkCollision(self, prevPos, pos, vel, dampeningFactor=1):
         if all(pos == prevPos):
             return None
 
-        
-    def intersection(l0, l1):
-        xdiff = (l0[0][0] - l0[1][0], l1[0][0] - l1[1][0])
-        ydiff = (l0[0][1] - l0[1][1], l1[0][1] - l1[1][1])
+        particlePath = np.array([prevPos, pos])
+        wireWall = np.array([self.corners[1], self.corners[2]])
+        # left off here at 1/7/2020
+    def lineIntersection(self, l0, l1):
+        diff = np.array([
+            [l0[0][0] - l1[1][0], l1[0][0] - l1[1][0]],
+            [l0[0][1] - l0[1][1], l1[0][1] - l1[1][1]]
+        ])
 
-        def det(a, b):
-            return a[0] * b[1] - a[1] * b[0]
-
-        div = det(xdiff, ydiff)
+        div = np.linalg.det(diff)
         if div == 0:
             return None
-        d = np.array([det(*l0), det(*l1)])
-        x = det(d, xdiff) / div
-        y = det(d, ydiff) / div
+        d = np.array([np.linalg.det(l0), np.linalg.det(l1)])
+        x = np.linalg.det(np.vstack((d, diff[0])))
+        y = np.linalg.det(np.vstack((d, diff[1])))
+
         return np.array([x, y])
-                
+
+    '''
     def checkCollision(self, prevPos, pos, vel, dampeningFactor=1):
         # if nothing's moving, don't bother
         if all(pos == prevPos):
@@ -94,6 +98,7 @@ class Wire(Conductor):
                 )
                 return np.array([collisionX, wall1]), newVel
         return None 
+    '''
 
     def draw(self, environment, color=(255, 255, 0), thickness=1):
         if self.lengthV[0] == 0:
