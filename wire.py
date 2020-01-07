@@ -17,9 +17,53 @@ class Wire(Conductor):
         self.start = start
         self.lengthV = lengthV
         self.r = r
-        
         self.end = start + lengthV
-    
+        
+        length = np.linalg.norm(lengthV)
+        horizontal_end = np.array([length, 0])
+        angle = np.arccos(lengthV[0] / length)
+        print('angle {}'.format(angle))
+        print('start: {} end: {}'.format(self.start, self.end))
+        pre_rotated = np.array([
+            -np.array([0, self.r]),
+            np.array([0, self.r]),
+            horizontal_end + np.array([0, self.r]),
+            horizontal_end - np.array([0, self.r]) 
+        ])
+
+        self.corners = pre_rotated @ self.rotMatrix(angle)
+        print(pre_rotated)
+        print(self.rotMatrix(angle))
+        print(self.corners)
+    # vectorized version, only works for axis-aligned wires
+
+    def rotMatrix(self, theta):
+        c = np.cos(theta)
+        s = np.sin(theta)
+        return np.array([
+            [c, -s],
+            [s, c]
+        ])
+    def checkCollision(self, prevPos, pos, vel, dampeningFactor=1):
+        if all(pos == prevPos):
+            return None
+
+        
+    def intersection(l0, l1):
+        xdiff = (l0[0][0] - l0[1][0], l1[0][0] - l1[1][0])
+        ydiff = (l0[0][1] - l0[1][1], l1[0][1] - l1[1][1])
+
+        def det(a, b):
+            return a[0] * b[1] - a[1] * b[0]
+
+        div = det(xdiff, ydiff)
+        if div == 0:
+            return None
+        d = np.array([det(*l0), det(*l1)])
+        x = det(d, xdiff) / div
+        y = det(d, ydiff) / div
+        return np.array([x, y])
+                
     def checkCollision(self, prevPos, pos, vel, dampeningFactor=1):
         # if nothing's moving, don't bother
         if all(pos == prevPos):
@@ -67,5 +111,4 @@ class Wire(Conductor):
                 self.end - np.array([0, self.r]),
                 self.end + np.array([0, self.r])
             ]
-        
-        environment.drawMesh([points], color)
+        environment.drawMesh([self.corners], color)
