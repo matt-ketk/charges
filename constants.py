@@ -20,3 +20,10 @@ class Constants:
 
     COPPER_CUBE_SIZE = 2.6E-8 # m
     COPPER_ION_RADIUS = 30E-10 #9.1E-11  # m
+
+    # NON-FUNDAMENTAL CONSTANTS
+
+    WIRE_LENGTH = 1E-8
+    WIRE_RADIUS = 0.0625E-8
+
+    DT = 1E-13

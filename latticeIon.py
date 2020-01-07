@@ -32,23 +32,24 @@ class LatticeIon:
         c = np.sum(np.square(prevPos - self.center), axis=1) - self.radius**2
 
         t0,  t1 = LatticeIon.quad(a,b,c)
-        print (t0)
-        print (t1)
+        print("t0", t0)
+        print("t1", t1)
         tMax = np.linalg.norm(pos - prevPos, axis=1) / np.linalg.norm(velocity, axis=1)
-        print (tMax)
+        print("tmax", tMax)
 
-        t0In = np.where((t0 > 0) * (tMax > t0), t0, 0)
-        t1In = np.where((t1 > 0) * (tMax > t1), t1, 0)
+        t0filtered = np.where((t0 > 0) * (tMax > t0), t0, 0)
+        t1filtered = np.where((t1 > 0) * (tMax > t1), t1, 0)
 
-        print (t0In)
+        print("t0 filtered", t0filtered)
+        print("t1 filtered", t1filtered)
 
-        t = np.where((t0 > 0) * (t1 > 0), np.minimum(t0In, t1In), np.nan)
+        t = np.where((t0 > 0) * (t1 > 0), np.minimum(t0filtered, t1filtered), np.nan)
          
-        print (t)
+        print("t", t)
 
-        colPos = np.where(np.isfinite(t), prevPos + np.array(list(map(np.multiply, velocity, t))), pos)  # TODO: figure out reshaping
+        colPos = np.where(np.repeat(np.isfinite(t), 2).reshape((len(t), 2)), prevPos + LatticeIon.convMap(np.multiply, velocity, t), pos)  # TODO: figure out reshaping
 
-        return colPos, reflectVector(pos, velocity, colPos, dampeningFactor=dampeningFactor) 
+        return colPos, self.reflectVector(pos, velocity, colPos, dampeningFactor=dampeningFactor)
 
 
     def reflectVector(self, position, velocity, collisionPoint, dampeningFactor=1): 
@@ -58,10 +59,10 @@ class LatticeIon:
         norm = np.linalg.norm(d)
 
         # for each particle, check if there is a collision point and if so, take normal vector; if not, take np.nan
-        n = np.where(collisionPoint != position, d / norm, np.nan)  
-        print (n)
-        return np.where(np.isfinite(n), dampeningFactor * (velocity - 2 * n * map(np.dot, n, velocity)), velocity)
-   
+        n = np.where(np.repeat(LatticeIon.convMap(LatticeIon.equals, collisionPoint, position), 2).reshape((len(position), 2)), d / norm, np.nan)
+        print("normal", n)
+        return np.where(np.isfinite(n), dampeningFactor * (velocity - 2 * LatticeIon.convMap(np.multiply, n, LatticeIon.convMap(np.dot, n, velocity))), velocity)
+
     @staticmethod
     def quad(a, b, c):
         """
@@ -150,6 +151,14 @@ class LatticeIon:
     def compile(self):
         return (self.center, self.charge, self.mass, 1)
 
+    @staticmethod
+    def equals(a, b):
+        return all(a == b)
+
+    @staticmethod
+    def convMap(func, a, b):
+        return np.array(list(map(func, a, b)))
+
 def main():
     """c = Charge(1.0, np.zeros(3), np.array([1, 1, 1]))
     n = LatticeIon(np.array([57, 56, 58]), 5, 0.9)
@@ -167,7 +176,7 @@ def main():
     v = pos - prevPos
 
     lat = LatticeIon(np.array([0,3]), 1, 1, 1)
-    print(lat.checkCollision(prevPos, pos, v))
+    print("final", lat.checkCollision(prevPos, pos, v))
 
 if __name__ == "__main__":
     main()
