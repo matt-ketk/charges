@@ -23,7 +23,10 @@ def main():
     wireLength = 1E-8
     wireRadius = .0625E-8
 
-    wire0 = Wire(np.array([0,-wireLength/2]), np.array([0,wireLength]), wireRadius)
+
+    # wire2 = Wire(np.array([0,-wireLength/2]), np.array([0,wireLength]), wireRadius)
+    # wire1 = Wire(np.array([0,-wireLength/2]), np.array([wireLength/2,wireLength]), wireRadius)
+    wire0 = Wire(np.array([0,-wireLength/2]), np.array([wireLength,wireLength]), wireRadius)
 
     # protons
     for i in range (2):
@@ -134,7 +137,8 @@ def main():
             #env.drawObject(w, color = (255, 100, 100))
             #env.drawCylinder(w.start, w.end, w.r, color = (255, 100, 100))
             wire0.draw(env, color=(255, 100, 100))
-
+            # wire1.draw(env, color=(255,100,100))
+            # wire2.draw(env, color=(255,100,100))
             pygame.display.flip()
 
 if __name__ == "__main__":
