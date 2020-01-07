@@ -117,7 +117,7 @@ class Plate(Conductor):
 		return None
 
 	@staticmethod
-	def inInterval(x, bounds, inclusive=True):
+	def inInterval(x, bounds, inclusive=False):
 		"""
 		checks if x is between bound1 and bound2
 		:param x: value to check position of

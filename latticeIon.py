@@ -22,73 +22,58 @@ class LatticeIon:
     def checkCollision(self, prevPos, pos, velocity, dampeningFactor=.9):
         """
         checks for collision of a particle with this ion given its position (as a numpy array) at 2 successive iterations
-        returns: the position of the collision and the particle's new velocity vector. If there was no collision returns None.
+        prevPos, pos, velocity: numpy arrays for all charges
+        returns: the collision positions and the particles' new velocity vectors. If there was no collision returns the original position and velocity vector.
         """
         # TODO: make the input an array of positions/velocities and use numpy operations rather than a for loop
-        unitV = velocity / np.linalg.norm(velocity)
+        
+        a = np.sum(np.square(velocity), axis=1)
+        b = 2 * np.sum(velocity * (prevPos - self.center), axis=1)
+        c = np.sum(np.square(prevPos - self.center), axis=1) - self.radius**2
 
-        d = prevPos - self.center
+        t0,  t1 = LatticeIon.quad(a,b,c)
+        print (t0)
+        print (t1)
+        tMax = np.linalg.norm(pos - prevPos, axis=1) / np.linalg.norm(velocity, axis=1)
+        print (tMax)
 
-        a = np.linalg.norm(unitV) ** 2
-        b = 2 * (np.dot(unitV, d))
-        c = np.dot(d, d) - self.radius ** 2
+        t0In = np.where((t0 > 0) * (tMax > t0), t0, 0)
+        t1In = np.where((t1 > 0) * (tMax > t1), t1, 0)
 
-        intersection = (LatticeIon.discriminant(a, b, c) >= 0)
-        if not intersection:
-            return None
-    
-        colPos = self.collisionPoint(prevPos, velocity)
-        if pos[0] - prevPos[0] != 0:
-            if not Plate.inInterval(colPos[0], (pos[0], prevPos[0])):
-                return None
-        elif pos[1] - prevPos[1] != 0:
-            if not Plate.inInterval(colPos[1], (pos[1], prevPos[1])):
-                return None
-        else:
-            if not Plate.inInterval(colPos[2], (pos[2], prevPos[2])):
-                return None
-        return colPos, self.reflectVector(colPos, velocity, dampeningFactor=dampeningFactor)
+        print (t0In)
 
-    def reflectVector(self, position, velocity, dampeningFactor = 1): 
-        n = self.collisionNormal(position, velocity)
-        return dampeningFactor * (velocity - 2 * n * np.dot(n, velocity))
+        t = np.where((t0 > 0) * (t1 > 0), np.minimum(t0In, t1In), np.nan)
+         
+        print (t)
 
-    def collisionNormal(self, position, velocity):
-        # returns a unit vector that is a surface normal at the point of collision
+        colPos = np.where(np.isfinite(t), prevPos + np.array(list(map(np.multiply, velocity, t))), pos)  # TODO: figure out reshaping
 
-        v = self.collisionPoint(position, velocity) - self.center
-        return v / np.linalg.norm(v)
+        return colPos, reflectVector(pos, velocity, colPos, dampeningFactor=dampeningFactor) 
 
-    def collisionPoint(self, position, velocity):
-        unitV = velocity / np.linalg.norm(velocity)
-        origin = position
-        distance = 0.0
 
-        # this is where it gets tricky... so basically,
+    def reflectVector(self, position, velocity, collisionPoint, dampeningFactor=1): 
+        d = collisionPoint - self.center
 
-        # between a line and a sphere, either one, two, or no intersections are formed
+        # array of normal vectors from collision point to center
+        norm = np.linalg.norm(d)
 
-        # put simply, the calculations look kind of like when solving a quadratic equation, and they are...
-        # ad^2 + bd + c = 0
-
-        d = origin - self.center  # this is for readability
-
-        # a = np.linalg.norm(unitV) ** 2 # a just becomes 1
-        b = 2 * (np.dot(unitV, d))
-        c = np.dot(d, d) - self.radius ** 2
-
-        # in the case that the quadratic formula outputs two possible results, I CURRENTLY DO NOT KNOW HOW TO DETERMINE WHICH ONE IS WHICH. There is the entry point and there is the exit point (if you know what I mean) imma leave it here fo now...
-
-        distance = -(b / 2) - np.sqrt((b / 2) ** 2 - c)
-        # distance = -(b / 2) - np.sqrt(b ** 2 - c) # the alternative solution
-
-        return (origin + distance * unitV)
-    # '''
+        # for each particle, check if there is a collision point and if so, take normal vector; if not, take np.nan
+        n = np.where(collisionPoint != position, d / norm, np.nan)  
+        print (n)
+        return np.where(np.isfinite(n), dampeningFactor * (velocity - 2 * n * map(np.dot, n, velocity)), velocity)
    
-    # '''
     @staticmethod
-    def discriminant(a, b, c):
-        return b ** 2 - 4 * (a * c)
+    def quad(a, b, c):
+        """
+        calculates real roots of quadratic with coefficients a, b, c
+        returns: tuple of np arrays of roots
+        """
+        disc = b ** 2 - 4 * a * c
+
+        t1 = np.divide(-b + disc ** 0.5, 2 * a, out=np.zeros(len(disc)), where=disc>0)
+        t2 = np.divide(-b - disc ** 0.5, 2 * a, out=np.zeros(len(disc)), where=disc>0)
+        return (t1, t2)
+
 
     @staticmethod
     def isInWire(point, wire, orientation=None):
@@ -177,11 +162,11 @@ def main():
     # lengthV = np.array([3E-9, 0, 0])
     # c = Wire(start, lengthV, 5E-10)
     # print(LatticeIon.generateLatticePoints(c))
-    prevPos = np.array([0, 0, 0])
-    pos = np.array([0, 0, 5])
+    prevPos = np.array([[0, 0], [0.5, 0], [-0.5, 0]])
+    pos = np.array([[0,5], [0.5, 5], [-0.5, 5]])
     v = pos - prevPos
 
-    lat = LatticeIon(np.array([0,2 / (2 ** 0.5), 5]), 2, 1)
+    lat = LatticeIon(np.array([0,3]), 1, 1, 1)
     print(lat.checkCollision(prevPos, pos, v))
 
 if __name__ == "__main__":
