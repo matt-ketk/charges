@@ -48,18 +48,79 @@ class Wire(Conductor):
     def checkCollision(self, prevPos, pos, vel, dampeningFactor=1):
         if all(pos == prevPos):
             return None
+        # vectorize lineIntersection function
+        vecLineIntersect = np.vectorize(self.lineIntersection)
 
-        particlePath = np.array([prevPos, pos])
-        wireWall = np.array([self.corners[1], self.corners[2]])
-        # left off here at 1/7/2020
-    def lineIntersection(self, l0, l1):
+        # finds collision points for one wall of the wire, return None if not
+        wallACollisions = vecLineIntersect(
+            self.corners[1],
+            self.corners[2],
+            prevPos,
+            pos
+        ) 
+        # ...and the other
+        wallBCollisions = vecLineIntersect(
+            self.corners[0],
+            self.corners[3],
+            prevPos,
+            pos
+        )
+        # get the distances of collisions to each wall for comparison
+        colDistanceA = np.linalg.norm(
+            wallACollisions,
+            where=wallACollisions!=None,
+            out=np.Inf
+        )
+        
+        colDistanceB = np.linalg.norm(
+            wallBCollisions,
+            where=colDistanceB!=None,
+            np.Inf
+        )
+
+        collisionDistances = np.hstack(
+            colDistanceA,
+            colDistanceB
+        )
+
+        wallCollisions = np.dstack(
+            wallACollisions,
+            wallBCollisions
+        )
+
+        collisionPositions = wallCollisions[np.argmin(collisionDistances, axis=1)]
+
+        
+        '''
+        wallACollisions = np.where(
+            wallACollisions!=None,
+            wallACollisions,
+            np.Inf
+        )
+
+        wallBCollisions = np.where(
+            wallBCollisions!=None,
+            wallBCollisions,
+            np.Inf
+        )
+        '''
+
+        
+
+
+
+
+
+    def lineIntersection(self, end0, end1, prevPos, pos):
+        l0 = np.array((end0, end1))
+        l1 = np.array((prevPos, pos))
         diff = np.array([
-            [l0[0][0] - l1[1][0], l1[0][0] - l1[1][0]],
+            [l0[0][0] - l0[1][0], l1[0][0] - l1[1][0]],
             [l0[0][1] - l0[1][1], l1[0][1] - l1[1][1]]
         ])
 
         div = np.linalg.det(diff)
-        if div == 0:
+        if div == 0: # when div == 0, there's no intersection thus no collision
             return None
         d = np.array([np.linalg.det(l0), np.linalg.det(l1)])
         x = np.linalg.det(np.vstack((d, diff[0])))
