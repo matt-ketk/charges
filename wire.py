@@ -44,26 +44,91 @@ class Wire(Conductor):
             [c, -s],
             [s, c]
         ])
+
     def checkCollision(self, prevPos, pos, vel, dampeningFactor=1):
         if all(pos == prevPos):
             return None
+        # vectorize lineIntersection function
+        vecLineIntersect = np.vectorize(self.lineIntersection)
+
+        # finds collision points for one wall of the wire, return None if not
+        wallACollisions = vecLineIntersect(
+            self.corners[1],
+            self.corners[2],
+            prevPos,
+            pos
+        ) 
+        # ...and the other
+        wallBCollisions = vecLineIntersect(
+            self.corners[0],
+            self.corners[3],
+            prevPos,
+            pos
+        )
+        # get the distances of collisions to each wall for comparison
+        colDistanceA = np.linalg.norm(
+            wallACollisions,
+            where=wallACollisions!=None,
+            out=np.Inf
+        )
+        
+        colDistanceB = np.linalg.norm(
+            wallBCollisions,
+            where=colDistanceB!=None,
+            np.Inf
+        )
+
+        collisionDistances = np.hstack(
+            colDistanceA,
+            colDistanceB
+        )
+
+        wallCollisions = np.dstack(
+            wallACollisions,
+            wallBCollisions
+        )
+
+        collisionPositions = wallCollisions[np.argmin(collisionDistances, axis=1)]
 
         
-    def intersection(l0, l1):
-        xdiff = (l0[0][0] - l0[1][0], l1[0][0] - l1[1][0])
-        ydiff = (l0[0][1] - l0[1][1], l1[0][1] - l1[1][1])
+        '''
+        wallACollisions = np.where(
+            wallACollisions!=None,
+            wallACollisions,
+            np.Inf
+        )
 
-        def det(a, b):
-            return a[0] * b[1] - a[1] * b[0]
+        wallBCollisions = np.where(
+            wallBCollisions!=None,
+            wallBCollisions,
+            np.Inf
+        )
+        '''
 
-        div = det(xdiff, ydiff)
-        if div == 0:
+        
+
+
+
+
+
+    def lineIntersection(self, end0, end1, prevPos, pos):
+        l0 = np.array((end0, end1))
+        l1 = np.array((prevPos, pos))
+        diff = np.array([
+            [l0[0][0] - l0[1][0], l1[0][0] - l1[1][0]],
+            [l0[0][1] - l0[1][1], l1[0][1] - l1[1][1]]
+        ])
+
+        div = np.linalg.det(diff)
+        if div == 0: # when div == 0, there's no intersection thus no collision
             return None
-        d = np.array([det(*l0), det(*l1)])
-        x = det(d, xdiff) / div
-        y = det(d, ydiff) / div
+        d = np.array([np.linalg.det(l0), np.linalg.det(l1)])
+        x = np.linalg.det(np.vstack((d, diff[0])))
+        y = np.linalg.det(np.vstack((d, diff[1])))
+
         return np.array([x, y])
-                
+
+    '''
     def checkCollision(self, prevPos, pos, vel, dampeningFactor=1):
         # if nothing's moving, don't bother
         if all(pos == prevPos):
@@ -94,6 +159,7 @@ class Wire(Conductor):
                 )
                 return np.array([collisionX, wall1]), newVel
         return None 
+    '''
 
     def draw(self, environment, color=(255, 255, 0), thickness=1):
         if self.lengthV[0] == 0:
