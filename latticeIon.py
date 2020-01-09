@@ -19,7 +19,7 @@ class LatticeIon:
         self.charge = charge
         self.mass = mass
 
-    def checkCollision(self, prevPos, pos, velocity, dampeningFactor=.9):
+    def checkCollision(self, prevPos, pos, velocity, dampeningFactor=1):
         """
         checks for collision of a particle with this ion given its position (as a numpy array) at 2 successive iterations
         prevPos, pos, velocity: numpy arrays for all charges
@@ -56,10 +56,10 @@ class LatticeIon:
         d = collisionPoint - self.center
 
         # array of normal vectors from collision point to center
-        norm = np.linalg.norm(d)
+        norm = np.linalg.norm(d, axis=1)
 
         # for each particle, check if there is a collision point and if so, take normal vector; if not, take np.nan
-        n = np.where(np.repeat(LatticeIon.convMap(LatticeIon.equals, collisionPoint, position), 2).reshape((len(position), 2)), d / norm, np.nan)
+        n = np.where(np.repeat(LatticeIon.convMap(LatticeIon.notEquals, collisionPoint, position), 2).reshape((len(position), 2)), d / norm.reshape((len(d), 1)), np.nan)
         print("normal", n)
         return np.where(np.isfinite(n), dampeningFactor * (velocity - 2 * LatticeIon.convMap(np.multiply, n, LatticeIon.convMap(np.dot, n, velocity))), velocity)
 
@@ -152,8 +152,8 @@ class LatticeIon:
         return (self.center, self.charge, self.mass, 1)
 
     @staticmethod
-    def equals(a, b):
-        return all(a == b)
+    def notEquals(a, b):
+        return not all(a == b)
 
     @staticmethod
     def convMap(func, a, b):
@@ -171,11 +171,11 @@ def main():
     # lengthV = np.array([3E-9, 0, 0])
     # c = Wire(start, lengthV, 5E-10)
     # print(LatticeIon.generateLatticePoints(c))
-    prevPos = np.array([[0, 0], [0.5, 0], [-0.5, 0]])
-    pos = np.array([[0,5], [0.5, 5], [-0.5, 5]])
+    prevPos = np.array([[0, 0], [2, 0], [-0.5, 0]])
+    pos = np.array([[0,5], [2, 5], [-0.5, 5]])
     v = pos - prevPos
 
-    lat = LatticeIon(np.array([0,3]), 1, 1, 1)
+    lat = LatticeIon(np.array([0, 3]), 1, 1, 1)
     print("final", lat.checkCollision(prevPos, pos, v))
 
 if __name__ == "__main__":
