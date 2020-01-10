@@ -1,6 +1,6 @@
 import numpy as np
 
-from wire import Wire
+# from wire import Wire
 from plate import Plate
 from charge import Charge
 from constants import Constants
@@ -32,20 +32,20 @@ class LatticeIon:
         c = np.sum(np.square(prevPos - self.center), axis=1) - self.radius**2
 
         t0,  t1 = LatticeIon.quad(a,b,c)
-        print("t0", t0)
-        print("t1", t1)
+        # print("t0", t0)
+        # print("t1", t1)
         tMax = np.linalg.norm(pos - prevPos, axis=1) / np.linalg.norm(velocity, axis=1)
-        print("tmax", tMax)
+        # print("tmax", tMax)
 
         t0filtered = np.where((t0 > 0) * (tMax > t0), t0, 0)
         t1filtered = np.where((t1 > 0) * (tMax > t1), t1, 0)
+        #
+        # print("t0 filtered", t0filtered)
+        # print("t1 filtered", t1filtered)
 
-        print("t0 filtered", t0filtered)
-        print("t1 filtered", t1filtered)
-
-        t = np.where((t0 > 0) * (t1 > 0), np.minimum(t0filtered, t1filtered), np.nan)
+        t = np.where((t0 > 0) * (t1 > 0), np.minimum(t0filtered, t1filtered), np.nan)  #TODO: fix logic
          
-        print("t", t)
+        # print("t", t)
 
         colPos = np.where(np.repeat(np.isfinite(t), 2).reshape((len(t), 2)), prevPos + LatticeIon.convMap(np.multiply, velocity, t), pos)  # TODO: figure out reshaping
 
@@ -60,8 +60,8 @@ class LatticeIon:
 
         # for each particle, check if there is a collision point and if so, take normal vector; if not, take np.nan
         n = np.where(np.repeat(LatticeIon.convMap(LatticeIon.notEquals, collisionPoint, position), 2).reshape((len(position), 2)), d / norm.reshape((len(d), 1)), np.nan)
-        print("normal", n)
-        return np.where(np.isfinite(n), dampeningFactor * (velocity - 2 * LatticeIon.convMap(np.multiply, n, LatticeIon.convMap(np.dot, n, velocity))), velocity)
+        # print("normal", n)
+        return np.where(np.isfinite(n), dampeningFactor * (velocity - 2 * LatticeIon.convMap(np.multiply, n, np.sum(np.multiply(n, velocity), axis=1))), velocity)  # TODO fix this :((
 
     @staticmethod
     def quad(a, b, c):
@@ -159,6 +159,10 @@ class LatticeIon:
     def convMap(func, a, b):
         return np.array(list(map(func, a, b)))
 
+    def drawIon(self, env, color=(255, 0, 0)):
+        # points = [[[self.radius * np.cos(t) + self.center[0], self.radius * np.sin(t) + self.center[1]] for t in np.linspace(0, 2 * np.pi, 15)]]
+        env.drawParticle(self.center, color, int(self.radius * env.zoom * 1 * 1.2))
+
 def main():
     """c = Charge(1.0, np.zeros(3), np.array([1, 1, 1]))
     n = LatticeIon(np.array([57, 56, 58]), 5, 0.9)
@@ -172,7 +176,7 @@ def main():
     # c = Wire(start, lengthV, 5E-10)
     # print(LatticeIon.generateLatticePoints(c))
     prevPos = np.array([[0, 0], [2, 0], [-0.5, 0]])
-    pos = np.array([[0,5], [2, 5], [-0.5, 5]])
+    pos = np.array([[0,0.5], [2, 5], [-0.5, 5]])
     v = pos - prevPos
 
     lat = LatticeIon(np.array([0, 3]), 1, 1, 1)

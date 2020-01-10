@@ -19,7 +19,7 @@ class Environment:
 
         return (position * self.zoom + self.offset).astype(int)
     
-    def drawParticle(self, position, color, radius = 1):
+    def drawParticle(self, position, color, radius=1):
         """Draws a particle on screen, accounting for perspective, panning and zoom.
 
         position: must be numpy array, the x, y and z coordinates of the particle
