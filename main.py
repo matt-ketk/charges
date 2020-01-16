@@ -94,21 +94,26 @@ def main():
                 coords = coords + deltaPosition(dt, f, vel.T, masses).T * (1  -stationary)
 
                 # collision detection for wire
-                for i in range (n):
-                    if stationary[i][0]:
-                        continue
-                    result = wire0.checkCollision(prevCoords[i], coords[i], vel[i])
+                collisionPositions, vel = wire0.checkCollision(prevCoords, coords, vel)
+                coords = collisionPositions + 0.01 * dt * vel
+                
+
+
+                # for i in range (n):
+                    # if stationary[i][0]:
+                        # continue
+                    # result = wire0.checkCollision(prevCoords[i], coords[i], vel[i])
                     # for ion in latticeIons:
                     #     result = ion.checkCollision(prevCoords[i], coords[i], vel[i])
                     #     if result:
                     #         break
-                    if result:
-                        colPos, newVel = result
-                        vel[i] = newVel
+                    # if result:
+                        # colPos, newVel = result
+                        # vel[i] = newVel
                 
-                        coords[i] = colPos + 0.01 * dt * newVel
+                        # coords[i] = colPos + 0.01 * dt * newVel
                 
-                    collision = bool(result)
+                    # collision = bool(result)
             '''
             # collision detection for plate
             for i in range (n):
