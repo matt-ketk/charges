@@ -19,7 +19,7 @@ class LatticeIon:
         self.charge = charge
         self.mass = mass
 
-    def checkCollision(self, prevPos, pos, velocity, dampeningFactor=1):
+    def checkCollision(self, prevPos, pos, velocity, dt, dampeningFactor=1):
         """
         checks for collision of a particle with this ion given its position (as a numpy array) at 2 successive iterations
         prevPos, pos, velocity: numpy arrays for all charges
@@ -34,16 +34,16 @@ class LatticeIon:
         t0,  t1 = LatticeIon.quad(a,b,c)
         # print("t0", t0)
         # print("t1", t1)
-        tMax = np.linalg.norm(pos - prevPos, axis=1) / np.linalg.norm(velocity, axis=1)
+        tMax = np.ones(len(pos)) * dt
         # print("tmax", tMax)
 
-        t0filtered = np.where((t0 > 0) * (tMax > t0), t0, 0)
-        t1filtered = np.where((t1 > 0) * (tMax > t1), t1, 0)
+        t0filtered = np.where((t0 > 0) * (tMax > t0), t0, 2 * dt)
+        t1filtered = np.where((t1 > 0) * (tMax > t1), t1, 2 * dt)
         #
         # print("t0 filtered", t0filtered)
         # print("t1 filtered", t1filtered)
 
-        t = np.where((t0 > 0) * (t1 > 0), np.minimum(t0filtered, t1filtered), np.nan)  #TODO: fix logic
+        t = np.where((t0filtered != 2 * dt) + (t1filtered != 2 * dt), np.minimum(t0filtered, t1filtered), np.nan)  #TODO: fix logic
          
         # print("t", t)
 
@@ -176,7 +176,7 @@ def main():
     # c = Wire(start, lengthV, 5E-10)
     # print(LatticeIon.generateLatticePoints(c))
     prevPos = np.array([[0, 0], [2, 0], [-0.5, 0]])
-    pos = np.array([[0,0.5], [2, 5], [-0.5, 5]])
+    pos = np.array([[0, 0.5], [2, 5], [-0.5, 5]])
     v = pos - prevPos
 
     lat = LatticeIon(np.array([0, 3]), 1, 1, 1)

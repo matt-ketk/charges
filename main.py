@@ -39,8 +39,8 @@ def main():
     latticeIons = []
 
     for i in range (1):
-        for j in range (1):
-            latticeIons.append(LatticeIon(np.array([-12E-8 * i, -12E-8 * j]), Constants.COPPER_ION_RADIUS, Constants.E, Constants.COPPER_MASS))
+        for j in range (0, 2):
+            latticeIons.append(LatticeIon(np.array([-12E-10 * i, -12E-10 * j]), Constants.COPPER_ION_RADIUS, Constants.E, Constants.COPPER_MASS))
 
     for ion in latticeIons:
         coords.append(ion.center)
@@ -50,7 +50,7 @@ def main():
     
 
     # electrons
-    for i in range(1,2):
+    for i in range(1, 3):
         coords.append([-6E-10 * i, -6E-10 * i**2])
         charges.append(-Constants.E)
         masses.append(Constants.MASS_ELECTRON)
@@ -60,15 +60,15 @@ def main():
     coords, prevCoords, charges, masses, stationary = np.array(coords), np.array(coords), np.array(charges), np.array(masses), np.array(stationary)
     n = charges.size
     print(n)
-    vel = np.zeros((n, 2)) + 1
+    vel = np.zeros((n, 2))
 
-    dt = 1E-14
+    dt = 1E-12
 
     pygame.init()
     screenSize = (800, 800)
     screen = pygame.display.set_mode(screenSize)
     env = Environment(screen, screenSize)
-    env.zoom = 5E11
+    env.zoom = 1E11
 
     # Relevant variables
     events = {
@@ -102,13 +102,17 @@ def main():
                 f = forces(coords, charges)
                 prevCoords = coords
                 vel = vel + deltaVelocity(dt, f, masses).T * (1 - stationary)
+                if vel[2][0] < -21:
+                    print("a;klf")
                 print ("velocity", vel)
                 coords = coords + deltaPosition(dt, f, vel.T, masses).T * (1  -stationary)
 
                 for ion in latticeIons:
-                    if (ion.checkCollision(prevCoords, coords, vel)[0] != coords).any():
+                    if (ion.checkCollision(prevCoords, coords, vel, dt)[0] != coords)[2].any():
                         print("gergttrhryhj")
-                    coords, vel = ion.checkCollision(prevCoords, coords, vel)
+                    elif np.linalg.norm(coords[2]) < Constants.COPPER_ION_RADIUS:
+                        print("Should collide")
+                    coords, vel = ion.checkCollision(prevCoords, coords, vel, dt)
 
                 # collision detection for wire
                 # for i in range (n):
