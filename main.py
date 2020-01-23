@@ -38,9 +38,9 @@ def main():
 
     latticeIons = []
 
-    for i in range (1):
+    for i in range (0, 1):
         for j in range (0, 2):
-            latticeIons.append(LatticeIon(np.array([-12E-10 * i, -12E-10 * j]), Constants.COPPER_ION_RADIUS, Constants.E, Constants.COPPER_MASS))
+            latticeIons.append(LatticeIon(np.array([-12E-10 * i, -4E-10 * j]), Constants.COPPER_ION_RADIUS, Constants.E, Constants.COPPER_MASS))
 
     for ion in latticeIons:
         coords.append(ion.center)
@@ -62,7 +62,7 @@ def main():
     print(n)
     vel = np.zeros((n, 2))
 
-    dt = 1E-12
+    dt = 1E-13
 
     pygame.init()
     screenSize = (800, 800)
@@ -80,7 +80,7 @@ def main():
     # Houeskeeping for the event loop
     done = False
     paused = False
-
+    iterNum = 0
     while not done:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -99,21 +99,15 @@ def main():
                 paused = not paused
         if not done:
             if not paused:
+
                 f = forces(coords, charges)
                 prevCoords = coords
                 vel = vel + deltaVelocity(dt, f, masses).T * (1 - stationary)
-                if vel[2][0] < -21:
-                    print("a;klf")
-                print ("velocity", vel)
                 coords = coords + deltaPosition(dt, f, vel.T, masses).T * (1  -stationary)
 
                 for ion in latticeIons:
-                    if (ion.checkCollision(prevCoords, coords, vel, dt)[0] != coords)[2].any():
-                        print("gergttrhryhj")
-                    elif np.linalg.norm(coords[2]) < Constants.COPPER_ION_RADIUS:
-                        print("Should collide")
-                    coords, vel = ion.checkCollision(prevCoords, coords, vel, dt)
-
+                    for i in range(len(latticeIons), len(coords)):
+                        coords[i], vel[i] = ion.checkCollision(prevCoords[i], coords[i], vel[i], dt)
                 # collision detection for wire
                 # for i in range (n):
                 #     if stationary[i][0]:
@@ -160,6 +154,7 @@ def main():
             # wire1.draw(env, color=(255,100,100))
             # wire2.draw(env, color=(255,100,100))
             pygame.display.flip()
+            iterNum += 1
 
 if __name__ == "__main__":
     main()
