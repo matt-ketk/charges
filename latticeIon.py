@@ -1,6 +1,6 @@
 import numpy as np
 
-from wire import Wire
+# from wire import Wire
 from plate import Plate
 from charge import Charge
 from constants import Constants
@@ -19,62 +19,61 @@ class LatticeIon:
         self.charge = charge
         self.mass = mass
 
-    def checkCollision(self, prevPos, pos, velocity, dampeningFactor=.9):
+    def checkCollision(self, prevPos, pos, velocity, dt, dampeningFactor=1):
         """
         checks for collision of a particle with this ion given its position (as a numpy array) at 2 successive iterations
         prevPos, pos, velocity: numpy arrays for all charges
         returns: the collision positions and the particles' new velocity vectors. If there was no collision returns the original position and velocity vector.
         """
-        # TODO: make the input an array of positions/velocities and use numpy operations rather than a for loop
-        
-        a = np.sum(np.square(velocity), axis=1)
-        b = 2 * np.sum(velocity * (prevPos - self.center), axis=1)
-        c = np.sum(np.square(prevPos - self.center), axis=1) - self.radius**2
 
-        t0,  t1 = LatticeIon.quad(a,b,c)
-        print("t0", t0)
-        print("t1", t1)
-        tMax = np.linalg.norm(pos - prevPos, axis=1) / np.linalg.norm(velocity, axis=1)
-        print("tmax", tMax)
+        a = np.linalg.norm(velocity)**2
+        b = 2 * (velocity[0] * (prevPos - self.center)[0] + velocity[1] * (prevPos - self.center)[1])
+        c = np.linalg.norm(prevPos - self.center)**2 + np.linalg.norm(pos - self.center)**2 - self.radius**2
 
-        t0filtered = np.where((t0 > 0) * (tMax > t0), t0, 0)
-        t1filtered = np.where((t1 > 0) * (tMax > t1), t1, 0)
+        ans = LatticeIon.quad(a, b, c)
+        if not ans:
+            return pos, velocity
 
-        print("t0 filtered", t0filtered)
-        print("t1 filtered", t1filtered)
+        t0, t1 = ans
+        tMax = dt
 
-        t = np.where((t0 > 0) * (t1 > 0), np.minimum(t0filtered, t1filtered), np.nan)
-         
-        print("t", t)
+        tFiltered = set()
+        if 0 < t0 < tMax:
+            tFiltered.add(t0)
+        if 0 < t1 < tMax:
+            tFiltered.add(t1)
 
-        colPos = np.where(np.repeat(np.isfinite(t), 2).reshape((len(t), 2)), prevPos + LatticeIon.convMap(np.multiply, velocity, t), pos)  # TODO: figure out reshaping
+        if not tFiltered:
+            return pos, velocity
 
-        return colPos, self.reflectVector(pos, velocity, colPos, dampeningFactor=dampeningFactor)
+        t = min(tFiltered)
+
+        colPos = prevPos + velocity * t
+
+        adjColPos = self.center + 1.01 * (colPos - self.center)
+        return adjColPos, self.reflectVector(pos, velocity, colPos, dampeningFactor=dampeningFactor)
 
 
     def reflectVector(self, position, velocity, collisionPoint, dampeningFactor=1): 
+        # normal vector from collision point to center
         d = collisionPoint - self.center
-
-        # array of normal vectors from collision point to center
         norm = np.linalg.norm(d)
-
-        # for each particle, check if there is a collision point and if so, take normal vector; if not, take np.nan
-        n = np.where(np.repeat(LatticeIon.convMap(LatticeIon.equals, collisionPoint, position), 2).reshape((len(position), 2)), d / norm, np.nan)
-        print("normal", n)
-        return np.where(np.isfinite(n), dampeningFactor * (velocity - 2 * LatticeIon.convMap(np.multiply, n, LatticeIon.convMap(np.dot, n, velocity))), velocity)
+        n = d / norm
+        # print("normal", n)
+        return dampeningFactor * (velocity - 2 * n * np.dot(n, velocity))
 
     @staticmethod
     def quad(a, b, c):
         """
         calculates real roots of quadratic with coefficients a, b, c
-        returns: tuple of np arrays of roots
+        returns: tuple of roots
         """
         disc = b ** 2 - 4 * a * c
 
-        t1 = np.divide(-b + disc ** 0.5, 2 * a, out=np.zeros(len(disc)), where=disc>0)
-        t2 = np.divide(-b - disc ** 0.5, 2 * a, out=np.zeros(len(disc)), where=disc>0)
-        return (t1, t2)
-
+        if disc > 0:
+            return (-b + disc ** 0.5)/(2 * a), (-b - disc ** 0.5)/(2 * a)
+        else:
+            return None
 
     @staticmethod
     def isInWire(point, wire, orientation=None):
@@ -152,12 +151,16 @@ class LatticeIon:
         return (self.center, self.charge, self.mass, 1)
 
     @staticmethod
-    def equals(a, b):
-        return all(a == b)
+    def notEquals(a, b):
+        return not all(a == b)
 
     @staticmethod
     def convMap(func, a, b):
         return np.array(list(map(func, a, b)))
+
+    def drawIon(self, env, color=(255, 0, 0)):
+        # points = [[[self.radius * np.cos(t) + self.center[0], self.radius * np.sin(t) + self.center[1]] for t in np.linspace(0, 2 * np.pi, 15)]]
+        env.drawParticle(self.center, color, int(self.radius * env.zoom))
 
 def main():
     """c = Charge(1.0, np.zeros(3), np.array([1, 1, 1]))
@@ -171,11 +174,11 @@ def main():
     # lengthV = np.array([3E-9, 0, 0])
     # c = Wire(start, lengthV, 5E-10)
     # print(LatticeIon.generateLatticePoints(c))
-    prevPos = np.array([[0, 0], [0.5, 0], [-0.5, 0]])
-    pos = np.array([[0,5], [0.5, 5], [-0.5, 5]])
+    prevPos = np.array([[0, 0], [2, 0], [-0.5, 0]])
+    pos = np.array([[0, 0.5], [2, 5], [-0.5, 5]])
     v = pos - prevPos
 
-    lat = LatticeIon(np.array([0,3]), 1, 1, 1)
+    lat = LatticeIon(np.array([0, 3]), 1, 1, 1)
     print("final", lat.checkCollision(prevPos, pos, v))
 
 if __name__ == "__main__":

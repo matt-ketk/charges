@@ -8,9 +8,9 @@ from charge import Charge
 from p2p import forces, deltaPosition, deltaVelocity
 from constants import Constants
 
-from wire import Wire
+# from wire import Wire
 # from plate import Plate
-# from latticeIon import LatticeIon
+from latticeIon import LatticeIon
 
 import debugtools as dbt
 
@@ -19,6 +19,12 @@ def main():
     charges = []
     masses = []
     stationary = []
+
+    coordsAll = []
+    chargesAll = []
+    massesAll = []
+    stationaryAll = []
+
 
     wireLength = 1E-8
     wireRadius = .0625E-8
@@ -38,14 +44,13 @@ def main():
     
 
     # electrons
-    for i in range(4):
-        coords.append(np.random.uniform(-1E-9, 1E-9, 2))
+    for i in range(1, 3):
+        coords.append([-6E-10 * i, -6E-10 * i**2])
         charges.append(-Constants.E)
         masses.append(Constants.MASS_ELECTRON)
         stationary.append([0])
 
-    #print (coords)
-    
+
     coords, prevCoords, charges, masses, stationary = np.array(coords), np.array(coords), np.array(charges), np.array(masses), np.array(stationary)
     n = charges.size
     print(n)
@@ -69,7 +74,7 @@ def main():
     # Houeskeeping for the event loop
     done = False
     paused = False
-
+    iterNum = 0
     while not done:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -88,12 +93,17 @@ def main():
                 paused = not paused
         if not done:
             if not paused:
+
                 f = forces(coords, charges)
                 prevCoords = coords
                 vel = vel + deltaVelocity(dt, f, masses).T * (1 - stationary)
                 coords = coords + deltaPosition(dt, f, vel.T, masses).T * (1  -stationary)
 
+                for ion in latticeIons:
+                    for i in range(len(latticeIons), len(coords)):
+                        coords[i], vel[i] = ion.checkCollision(prevCoords[i], coords[i], vel[i], dt)
                 # collision detection for wire
+<<<<<<< HEAD
                 print('prev coords:', prevCoords)
                 print('coords:', coords)
                 print('vel:', vel)
@@ -117,6 +127,23 @@ def main():
                         # coords[i] = colPos + 0.01 * dt * newVel
                 
                     # collision = bool(result)
+=======
+                # for i in range (n):
+                #     if stationary[i][0]:
+                #         continue
+                #     result = wire0.checkCollision(prevCoords[i], coords[i], vel[i])
+                #     for ion in latticeIons:
+                #         result = ion.checkCollision(prevCoords[i], coords[i], vel[i])
+                #         if result:
+                #             break
+                #     if result:
+                #         colPos, newVel = result
+                #         vel[i] = newVel
+                #
+                #         coords[i] = colPos + 0.01 * dt * newVel
+                #
+                #     collision = bool(result)
+>>>>>>> 6500423dc84217e3d232048443decae7e237c97f
             '''
             # collision detection for plate
             for i in range (n):
@@ -133,21 +160,26 @@ def main():
             '''
             screen.fill((255, 255, 255))
             for c in range (n):
-                pos = coords[c]
-                color = (255, 100, 100)
-                r = 8
                 if charges[c] < 0:
+                    pos = coords[c]
                     color = (100, 100, 255)
                     r = 1
+<<<<<<< HEAD
 
                 env.drawParticle(pos, color, radius = 8)
+=======
+                    env.drawParticle(pos, color, radius = r)
+            for ion in latticeIons:
+                ion.drawIon(env)
+>>>>>>> 6500423dc84217e3d232048443decae7e237c97f
 
             #env.drawObject(w, color = (255, 100, 100))
             #env.drawCylinder(w.start, w.end, w.r, color = (255, 100, 100))
-            wire0.draw(env, color=(255, 100, 100))
+            # wire0.draw(env, color=(255, 100, 100))
             # wire1.draw(env, color=(255,100,100))
             # wire2.draw(env, color=(255,100,100))
             pygame.display.flip()
+            iterNum += 1
 
 if __name__ == "__main__":
     main()
