@@ -28,7 +28,7 @@ class LatticeIon:
 
         a = np.linalg.norm(velocity)**2
         b = 2 * (velocity[0] * (prevPos - self.center)[0] + velocity[1] * (prevPos - self.center)[1])
-        c = np.linalg.norm(prevPos - self.center)**2 + np.linalg.norm(pos - self.center)**2 - self.radius**2
+        c = np.linalg.norm(prevPos - self.center)**2 - self.radius**2
 
         ans = LatticeIon.quad(a, b, c)
         if not ans:
