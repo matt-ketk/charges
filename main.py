@@ -32,15 +32,21 @@ def main():
 
     # wire2 = Wire(np.array([0,-wireLength/2]), np.array([0,wireLength]), wireRadius)
     # wire1 = Wire(np.array([0,-wireLength/2]), np.array([wireLength/2,wireLength]), wireRadius)
-    wire0 = Wire(np.array([0,-wireLength/2]), np.array([0,wireLength]), wireRadius)
+    # wire0 = Wire(np.array([0,-wireLength/2]), np.array([wireLength,wireLength]), wireRadius)
 
     # protons
-    for i in range (1):
-        for j in range (1):
-            coords.append([-9E-10 * i, -9E-10 * j])
-            charges.append(Constants.E)
-            masses.append(Constants.COPPER_MASS)
-            stationary.append([1])
+
+    latticeIons = []
+
+    for i in range (0, 1):
+        for j in range (0, 2):
+            latticeIons.append(LatticeIon(np.array([-12E-10 * i, -4E-10 * j]), Constants.COPPER_ION_RADIUS, Constants.E, Constants.COPPER_MASS))
+
+    for ion in latticeIons:
+        coords.append(ion.center)
+        charges.append(ion.charge)
+        masses.append(ion.mass)
+        stationary.append([1])
     
 
     # electrons
@@ -104,6 +110,7 @@ def main():
                         coords[i], vel[i] = ion.checkCollision(prevCoords[i], coords[i], vel[i], dt)
                 # collision detection for wire
 <<<<<<< HEAD
+<<<<<<< HEAD
                 print('prev coords:', prevCoords)
                 print('coords:', coords)
                 print('vel:', vel)
@@ -128,6 +135,8 @@ def main():
                 
                     # collision = bool(result)
 =======
+=======
+>>>>>>> 6500423dc84217e3d232048443decae7e237c97f
                 # for i in range (n):
                 #     if stationary[i][0]:
                 #         continue
@@ -143,6 +152,9 @@ def main():
                 #         coords[i] = colPos + 0.01 * dt * newVel
                 #
                 #     collision = bool(result)
+<<<<<<< HEAD
+>>>>>>> 6500423dc84217e3d232048443decae7e237c97f
+=======
 >>>>>>> 6500423dc84217e3d232048443decae7e237c97f
             '''
             # collision detection for plate
@@ -165,8 +177,14 @@ def main():
                     color = (100, 100, 255)
                     r = 1
 <<<<<<< HEAD
+<<<<<<< HEAD
 
                 env.drawParticle(pos, color, radius = 8)
+=======
+                    env.drawParticle(pos, color, radius = r)
+            for ion in latticeIons:
+                ion.drawIon(env)
+>>>>>>> 6500423dc84217e3d232048443decae7e237c97f
 =======
                     env.drawParticle(pos, color, radius = r)
             for ion in latticeIons:
