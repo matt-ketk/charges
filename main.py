@@ -109,7 +109,6 @@ def main():
                     for i in range(len(latticeIons), len(coords)):
                         coords[i], vel[i] = ion.checkCollision(prevCoords[i], coords[i], vel[i], dt)
                 # collision detection for wire
-
                 print('prev coords:', prevCoords)
                 print('coords:', coords)
                 print('vel:', vel)
@@ -133,7 +132,6 @@ def main():
                         # coords[i] = colPos + 0.01 * dt * newVel
                 
                     # collision = bool(result)
-
                 # for i in range (n):
                 #     if stationary[i][0]:
                 #         continue
@@ -169,9 +167,7 @@ def main():
                     pos = coords[c]
                     color = (100, 100, 255)
                     r = 1
-
-                    env.drawParticle(pos, color, radius = 8)
-                # env.drawParticle(pos, color, radius = r)
+                    env.drawParticle(pos, color, radius = r)
             for ion in latticeIons:
                 ion.drawIon(env)
 
