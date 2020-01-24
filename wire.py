@@ -46,135 +46,57 @@ class Wire(Conductor):
         ])
 
     def checkCollision(self, prevPos, pos, vel, dampeningFactor=1):
-        if np.array_equal(pos, prevPos):
-            return None
-        # finds collision points for one wall of the wire, return None if not
-        wallACollisions = self.lineIntersection(
-            self.corners[1],
-            self.corners[2],
+        collisionPositionsA, collisionT_A = self.lineIntersection(
             prevPos,
-            pos
+            pos,
+            np.array([self.corners[1]]),
+            np.array([self.corners[2]])
         )
-        # ...and the other
-        wallBCollisions = self.lineIntersection(
-            self.corners[0],
-            self.corners[3],
+
+        collisionPositionsB, collisionT_B = self.lineIntersection(
             prevPos,
-            pos
+            pos,
+            np.array([self.corners[0]]),
+            np.array([self.corners[3]])
         )
-        # get the distances of collisions to each wall for comparison
-        print(wallACollisions)
-        colDistanceA = np.linalg.norm(
-            wallACollisions,
-            axis=1
-        )
-        
-        colDistanceB = np.linalg.norm(
-            wallBCollisions,
-            axis=1
-        )
-        collisionDistances = np.hstack((
-            colDistanceA,
-            colDistanceB
-        ))
 
-        wallCollisions = np.dstack((
-            wallACollisions,
-            wallBCollisions
-        ))
-        collidedIndex = np.argmin(collisionDistances, axis=1)
-        collisionPositions = wallCollisions[collidedIndex]
-
+        for i in range(len(pos)):
+            colPos = None
+            if collisionT_A[i,0] < 0:
+                colPos = collisionPositionsA[i]
+            elif collisionT_B[i,0] < 0:
+                colPos = collisionPositionsB[i]
+            elif collisionT_A[i,0] <= collisionT_B[i,0]:
+                colPos = collisionPositionsA[i,0]
+            elif collisionT_B[i,0] <= collisionT_A[i,0]:
+                colPos = collisionPositionsB[i]
+            collisionPositionsA[i] = colPos
+            
         vectorWallA = self.corners[2] - self.corners[1]
-        vectorWallB = self.corners[3] - self.corners[0]
-
-        normalWall = np.array([
-            [1, -vectorWallA[0] / vectorWallA[1]],
-            [1, -vectorWallB[0] / vectorWallB[1]]
-        ])
-
-        return collisionPositions, dampeningFactor * self.reflect(vel, normalWall[collidedIndex])         
+        # print('v0:', vel.size)
+        # print('normal', np.array([1, -vectorWallA[0] / vectorWallA[1]]))
+        normal = np.array([1, -vectorWallA[0] / vectorWallA[1]])
+        newVel = np.zeros(vel.shape)
+        for i in range(len(vel)):
+            newVel[i] = self.reflect(vel[i], normal) 
+        return collisionPositionsA, newVel
 
     def reflect(self, v0, normal):
-        return v0 - 2 * np.dot(v0, normal) * normal
+        return v0 - 2 * np.sum(np.multiply(v0, normal)) * normal
 
-    def lineIntersection(self, end0, end1, prevPos, pos):
-        x = np.array([
-            np.ones(pos.shape[0]) * end0[0],
-            np.ones_like(pos.shape[0]) * end1[0],
-            prevPos[:,0],
-            pos[:,0]
-        ])
+    def lineIntersection(self, s1, e1, s2, e2):
+        # represent line 1 as y = mx + b
+        v1 = (e1 - s1).astype(float)
+        v2 = (e2 - s2).astype(float)
 
-        y = np.array([
-            np.ones(pos.shape[0]) * end0[1],
-            np.ones(pos.shape[0]) * end1[1],
-            prevPos[:,1],
-            pos[:,1]
-        ])
+        a = s2[:, 1] - s1[:, 1] - (v1[:, 1] * s2[:, 0] - v1[:, 1] * s1[:, 0]) / v1[:, 0]
+        b = (v1[:, 1] * v2[:, 0] - v2[:, 1] * v1[:, 0]) / (v1[:, 0])
 
-        xOut = ((x[0] * y[1] - y[0] * x[1]) * (x[2] - x[3]) - (x[0] - x[1]) * (x[2] * y[3] - y[2] * y[3])) / ((x[0] - x[1]) * (y[2] - y[3]) - (y[0] - y[1]) * (x[2] - x[3]))        
-        yOut = ((x[0] * y[1] - y[0] * x[1]) * (y[2] - y[3]) - (y[0] - y[1]) * (x[2] * y[3] - y[2] * x[3])) / ((x[0] - x[1]) * (y[2] - y[3]) - (y[0] - y[1]) * (x[2] - x[3]))
+        t = (a / b)[:,np.newaxis]
+        s = (s2[:, 0:1] + t * v2[:, 0:1] - s1[:, 0:1]) / v1[:, 0:1]
 
-        return np.vstack((xOut, yOut))
-    '''
-    def lineIntersection(self, end0, end1, prevPos, pos):
-        # print(end0, end1)
-        l0 = np.vstack((end0, end1))
-        l1 = np.dstack((prevPos, pos))
-        diff = np.array([
-            [l0[0][0] - l0[1][0], l1[0][0] - l1[1][0]],
-            [l0[0][1] - l0[1][1], l1[0][1] - l1[1][1]]
-        ])
-        xDiff = np.array([
-            np.ones_like(pos) * (l0[0,0] - l1[1,0]),
-            l1[:,0,0] - l1[:,1,0]
-        ])
-        yDiff = np.array([
-            np.ones_like(pos) * (l0[0,1] - l0[1,1]),
-            l1[:,0,1] - l1[:,1,1]
-        ])
-
-        div = np.linalg.det(diff, axis=1)
-        if div == 0: # when div == 0, there's no intersection thus no collision
-            return None
-        d = np.array([np.linalg.det(l0), np.linalg.det(l1)])
-        x = np.linalg.det(np.vstack((d, diff[0])))
-        y = np.linalg.det(np.vstack((d, diff[1])))
-
-        return np.array([x, y])
-
-    def checkCollision(self, prevPos, pos, vel, dampeningFactor=1):
-        # if nothing's moving, don't bother
-        if all(pos == prevPos):
-            return None
-        # if length is pointing in y-direction,
-        
-        if self.lengthV[0] == 0:
-            wall0 = self.start[0] - self.r
-            wall1 = self.start[0] + self.r
-            if Plate.inInterval(wall0,(prevPos[0], pos[0])): 
-                collisionY = (vel[1] / vel[0]) * (wall0 - prevPos[0]) + prevPos[1]
-                newVel = np.array([-vel[0],vel[1]])
-                return np.array([wall0, collisionY]), newVel 
-            elif Plate.inInterval(wall1,(prevPos[0], pos[0])):
-                collisionY = (vel[1] / vel[0]) * (wall1 - prevPos[0]) + prevPos[1]
-                newVel = np.array([-vel[0],vel[1]])
-                return np.array([wall1, collisionY]), newVel
-        if self.lengthV[1] == 0:
-            wall0 = self.start[1] - self.r
-            wall1 = self.start[1] + self.r
-            if Plate.inInterval(wall0,(prevPos[1], pos[1])): 
-                collisionX = (vel[0] / vel[1]) * (wall0 - prevPos[1]) + prevPos[0]
-                newVel = np.array([vel[0],-vel[1]])
-                return np.array([collisionX, wall0]), newVel 
-            elif Plate.inInterval(wall1,(prevPos[1], pos[1])):
-                collisionX = (vel[0] / vel[1]) * (wall1 - prevPos[1]) + prevPos[0]
-                newVel = np.array(vel[0],-vel[1]
-                )
-                return np.array([collisionX, wall1]), newVel
-        return None 
-    '''
+        print(np.array([s2 +v2 * t]).shape)
+        return s2 + v2 * t, s
 
     def draw(self, environment, color=(255, 255, 0), thickness=1):
         if self.lengthV[0] == 0:

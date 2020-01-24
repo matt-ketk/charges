@@ -26,11 +26,11 @@ def main():
 
     # wire2 = Wire(np.array([0,-wireLength/2]), np.array([0,wireLength]), wireRadius)
     # wire1 = Wire(np.array([0,-wireLength/2]), np.array([wireLength/2,wireLength]), wireRadius)
-    wire0 = Wire(np.array([0,-wireLength/2]), np.array([wireLength,wireLength]), wireRadius)
+    wire0 = Wire(np.array([0,-wireLength/2]), np.array([0,wireLength]), wireRadius)
 
     # protons
-    for i in range (2):
-        for j in range (2):
+    for i in range (1):
+        for j in range (1):
             coords.append([-9E-10 * i, -9E-10 * j])
             charges.append(Constants.E)
             masses.append(Constants.COPPER_MASS)
@@ -94,8 +94,11 @@ def main():
                 coords = coords + deltaPosition(dt, f, vel.T, masses).T * (1  -stationary)
 
                 # collision detection for wire
-                collisionPositions, vel = wire0.checkCollision(prevCoords, coords, vel)
-                coords = collisionPositions + 0.01 * dt * vel
+                print('prev coords:', prevCoords)
+                print('coords:', coords)
+                print('vel:', vel)
+                # collisionPositions, vel = wire0.checkCollision(prevCoords, coords, vel)
+                #coords = collisionPositions + 0.01 * dt * vel
                 
 
 
@@ -137,7 +140,7 @@ def main():
                     color = (100, 100, 255)
                     r = 1
 
-                env.drawParticle(pos, color, radius = r)
+                env.drawParticle(pos, color, radius = 8)
 
             #env.drawObject(w, color = (255, 100, 100))
             #env.drawCylinder(w.start, w.end, w.r, color = (255, 100, 100))
