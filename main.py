@@ -32,11 +32,21 @@ def main():
 
     # wire2 = Wire(np.array([0,-wireLength/2]), np.array([0,wireLength]), wireRadius)
     # wire1 = Wire(np.array([0,-wireLength/2]), np.array([wireLength/2,wireLength]), wireRadius)
-    # wire0 = Wire(np.array([0,-wireLength/2]), np.array([wireLength,wireLength]), wireRadius)
+    wire0 = Wire(np.array([0,-wireLength/2]), np.array([wireLength,wireLength]), wireRadius)
 
     wire1 = Wire(np.array([-wireLength, 0.]), np.array([wireLength, wireLength]), wireRadius)
 
     # protons
+    for i in range (0, 2):
+        for j in range (0, 2):
+            latticeIons.append(LatticeIon(np.array([-12E-10 * i, -4E-10 * j]), Constants.COPPER_ION_RADIUS, Constants.E, Constants.COPPER_MASS))
+
+    for ion in latticeIons:
+        coords.append(ion.center)
+        charges.append(ion.charge)
+        masses.append(ion.mass)
+        stationary.append([1])
+    
 
     # electrons
     for i in range(0, 10):
@@ -94,11 +104,23 @@ def main():
                 vel = vel + deltaVelocity(dt, f, masses).T * (1 - stationary)
                 coords = coords + deltaPosition(dt, f, vel.T, masses).T * (1  -stationary)
 
+                
                 for k in range(len(charges)):
                     collision = wire1.checkCollision(prevCoords[k], coords[k], vel[k])
                     if collision:
                         coords[k], vel[k] = collision
                         coords[k] += vel[k] * dt
+
+                for ion in latticeIons:
+                    for i in range(len(latticeIons), len(coords)):
+                        coords[i], vel[i] = ion.checkCollision(prevCoords[i], coords[i], vel[i], dt)
+                # collision detection for wire
+                print('prev coords:', prevCoords)
+                print('coords:', coords)
+                print('vel:', vel)
+                # collisionPositions, vel = wire0.checkCollision(prevCoords, coords, vel)
+                #coords = collisionPositions + 0.01 * dt * vel
+                
 
                 #print('done with loop')
                 #done = True
@@ -134,6 +156,14 @@ def main():
             wire1.draw(env, color = (255, 100, 100))
 
 
+            for ion in latticeIons:
+                ion.drawIon(env)
+
+            #env.drawObject(w, color = (255, 100, 100))
+            #env.drawCylinder(w.start, w.end, w.r, color = (255, 100, 100))
+            wire0.draw(env, color=(255, 100, 100))
+            # wire1.draw(env, color=(255,100,100))
+            # wire2.draw(env, color=(255,100,100))
             pygame.display.flip()
             iterNum += 1
 
