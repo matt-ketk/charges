@@ -20,10 +20,9 @@ class Wire(Conductor):
         self.end = start + lengthV
         
         length = np.linalg.norm(lengthV)
-        horizontal_end = np.array([length, 0])
+        horizontal_end = np.array([length, 0.0000001 * length])
         angle = np.arccos(lengthV[0] / length)
-        print('angle {}'.format(angle))
-        print('start: {} end: {}'.format(self.start, self.end))
+
         pre_rotated = np.array([
             -np.array([0, self.r]),
             np.array([0, self.r]),
@@ -31,10 +30,8 @@ class Wire(Conductor):
             horizontal_end - np.array([0, self.r]) 
         ])
 
-        self.corners = pre_rotated @ self.rotMatrix(angle)
-        print(pre_rotated)
-        print(self.rotMatrix(angle))
-        print(self.corners)
+        self.corners = pre_rotated @ self.rotMatrix(angle) + self.start
+
     # vectorized version, only works for axis-aligned wires
 
     def rotMatrix(self, theta):
@@ -45,7 +42,9 @@ class Wire(Conductor):
             [s, c]
         ])
 
-    def checkCollision(self, prevPos, pos, vel, dampeningFactor=1):
+    def checkCollision(self, prevPos, pos, velIn, dampeningFactor=1):
+        vel = velIn
+        vel[1] += 0.0001 * vel[0]  # protects against divide by 0
         collisionPositionsA, collisionT_A = self.lineIntersection(
             prevPos,
             pos,
@@ -64,7 +63,6 @@ class Wire(Conductor):
 
         validA, validB = not (collisionT_A < 0 or collisionT_A > 1), not (collisionT_B < 0 or collisionT_B > 1)
         
-        print(collisionT_A, collisionT_B)
 
         if not(validA) and not(validB):
             return False
@@ -103,7 +101,9 @@ class Wire(Conductor):
         t = (a / b)
         s = (s2[0] + t * v2[0] - s1[0]) / v1[0]
 
-        print(np.array([s2 +v2 * t]).shape)
+        if (t < 0 or t > 1):
+            return 0, 2
+
         return s2 + v2 * t, s
 
     def draw(self, environment, color=(255, 255, 0), thickness=1):

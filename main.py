@@ -25,21 +25,18 @@ def main():
     massesAll = []
     stationaryAll = []
 
-
-    wireLength = 1E-8
+    wireLength = 1E-7
     wireRadius = .125E-8
 
+    wire0 = Wire(np.array([-wireLength / 2, 0]), np.array([wireLength, 0]), wireRadius)
 
-    # wire2 = Wire(np.array([0,-wireLength/2]), np.array([0,wireLength]), wireRadius)
-    # wire1 = Wire(np.array([0,-wireLength/2]), np.array([wireLength/2,wireLength]), wireRadius)
-    wire0 = Wire(np.array([0,-wireLength/2]), np.array([wireLength,wireLength]), wireRadius)
-
-    wire1 = Wire(np.array([-wireLength, 0.]), np.array([wireLength, wireLength]), wireRadius)
-
+    latticeIons = []
     # protons
-    for i in range (0, 2):
-        for j in range (0, 2):
-            latticeIons.append(LatticeIon(np.array([-12E-10 * i, -4E-10 * j]), Constants.COPPER_ION_RADIUS, Constants.E, Constants.COPPER_MASS))
+    xNum = 15
+    yNum = 3
+    for i in range(0, xNum):
+        for j in range(0, yNum):
+            latticeIons.append(LatticeIon(np.array([-12E-10 * i + 10E-9, 6E-10 * j - 6E-10]), Constants.COPPER_ION_RADIUS, Constants.E, Constants.COPPER_MASS))
 
     for ion in latticeIons:
         coords.append(ion.center)
@@ -49,19 +46,19 @@ def main():
     
 
     # electrons
-    for i in range(0, 10):
-        coords.append([6E-10 * i, -6E-11 * i**2])
-        charges.append(-Constants.E)
-        masses.append(Constants.MASS_ELECTRON)
-        stationary.append([0])
+    for i in range(0, xNum):
+        for j in range(0, yNum):
+            coords.append([-12E-10 * i + 10E-9 + np.random.uniform(-1E-9, 1E-9), 6E-10 * j - 4E-10])
+            charges.append(-Constants.E)
+            masses.append(Constants.MASS_ELECTRON)
+            stationary.append([0])
 
 
     coords, prevCoords, charges, masses, stationary = np.array(coords), np.array(coords), np.array(charges), np.array(masses), np.array(stationary)
     n = charges.size
-    print(n)
     vel = np.zeros((n, 2))
 
-    dt = 3E-13
+    dt = 1E-12
 
     pygame.init()
     screenSize = (800, 800)
@@ -99,15 +96,15 @@ def main():
         if not done:
             if not paused:
 
-                f = forces(coords, charges)
+                f = forces(coords, charges) + np.array([5E-19, 0]).repeat(len(charges)).reshape((2, len(charges)))
                 prevCoords = coords
                 vel = vel + deltaVelocity(dt, f, masses).T * (1 - stationary)
-                coords = coords + deltaPosition(dt, f, vel.T, masses).T * (1  -stationary)
-
+                coords = coords + deltaPosition(dt, f, vel.T, masses).T * (1 - stationary)
                 
-                for k in range(len(charges)):
-                    collision = wire1.checkCollision(prevCoords[k], coords[k], vel[k])
+                for k in range(len(latticeIons), len(charges)):
+                    collision = wire0.checkCollision(prevCoords[k], coords[k], vel[k])
                     if collision:
+                        wire0.checkCollision(prevCoords[k], coords[k], vel[k])
                         coords[k], vel[k] = collision
                         coords[k] += vel[k] * dt
 
@@ -115,9 +112,9 @@ def main():
                     for i in range(len(latticeIons), len(coords)):
                         coords[i], vel[i] = ion.checkCollision(prevCoords[i], coords[i], vel[i], dt)
                 # collision detection for wire
-                print('prev coords:', prevCoords)
-                print('coords:', coords)
-                print('vel:', vel)
+                # print('prev coords:', prevCoords)
+                # print('coords:', coords)
+                # print('vel:', vel)
                 # collisionPositions, vel = wire0.checkCollision(prevCoords, coords, vel)
                 #coords = collisionPositions + 0.01 * dt * vel
                 
@@ -145,23 +142,21 @@ def main():
             # also a magnetic field in the positive z-axis, [0, 0, 1]
             '''
             screen.fill((255, 255, 255))
-            for c in range (n):
+            for c in range(n):
                 if charges[c] < 0:
                     pos = coords[c]
                     color = (100, 100, 255)
                     r = 1
+                    env.drawParticle(pos, color, radius=1)
 
-                env.drawParticle(pos, color, radius = 1)
-
-            wire1.draw(env, color = (255, 100, 100))
-
+            wire0.draw(env, color = (255, 100, 100))
 
             for ion in latticeIons:
                 ion.drawIon(env)
 
             #env.drawObject(w, color = (255, 100, 100))
             #env.drawCylinder(w.start, w.end, w.r, color = (255, 100, 100))
-            wire0.draw(env, color=(255, 100, 100))
+            wire0.draw(env, color=(50, 255, 150))
             # wire1.draw(env, color=(255,100,100))
             # wire2.draw(env, color=(255,100,100))
             pygame.display.flip()
