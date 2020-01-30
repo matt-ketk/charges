@@ -49,51 +49,59 @@ class Wire(Conductor):
         collisionPositionsA, collisionT_A = self.lineIntersection(
             prevPos,
             pos,
-            np.array([self.corners[1]]),
-            np.array([self.corners[2]])
+            np.array(self.corners[1]),
+            np.array(self.corners[2])
         )
 
         collisionPositionsB, collisionT_B = self.lineIntersection(
             prevPos,
             pos,
-            np.array([self.corners[0]]),
-            np.array([self.corners[3]])
+            np.array(self.corners[0]),
+            np.array(self.corners[3])
         )
 
-        for i in range(len(pos)):
-            colPos = None
-            if collisionT_A[i,0] < 0:
-                colPos = collisionPositionsA[i]
-            elif collisionT_B[i,0] < 0:
-                colPos = collisionPositionsB[i]
-            elif collisionT_A[i,0] <= collisionT_B[i,0]:
-                colPos = collisionPositionsA[i,0]
-            elif collisionT_B[i,0] <= collisionT_A[i,0]:
-                colPos = collisionPositionsB[i]
-            collisionPositionsA[i] = colPos
-            
+        colPos = None
+
+        validA, validB = not (collisionT_A < 0 or collisionT_A > 1), not (collisionT_B < 0 or collisionT_B > 1)
+        
+        print(collisionT_A, collisionT_B)
+
+        if not(validA) and not(validB):
+            return False
+
+        if (validA and validB):
+            if validA < validB:
+                colPos = collisionPositionsA
+            else:
+                colPos = collisionPositionsB
+        
+        elif (validA):
+            colPos = collisionPositionsA
+        elif validB:
+            colPos = collisionPositionsB
+
         vectorWallA = self.corners[2] - self.corners[1]
-        # print('v0:', vel.size)
-        # print('normal', np.array([1, -vectorWallA[0] / vectorWallA[1]]))
+      
         normal = np.array([1, -vectorWallA[0] / vectorWallA[1]])
-        newVel = np.zeros(vel.shape)
-        for i in range(len(vel)):
-            newVel[i] = self.reflect(vel[i], normal) 
-        return collisionPositionsA, newVel
+        normal /= np.linalg.norm(normal)
+
+        newVel = self.reflect(vel, normal) 
+
+        return colPos, newVel
 
     def reflect(self, v0, normal):
-        return v0 - 2 * np.sum(np.multiply(v0, normal)) * normal
+        return v0 - 2 * np.dot(v0, normal) * normal
 
     def lineIntersection(self, s1, e1, s2, e2):
         # represent line 1 as y = mx + b
         v1 = (e1 - s1).astype(float)
         v2 = (e2 - s2).astype(float)
 
-        a = s2[:, 1] - s1[:, 1] - (v1[:, 1] * s2[:, 0] - v1[:, 1] * s1[:, 0]) / v1[:, 0]
-        b = (v1[:, 1] * v2[:, 0] - v2[:, 1] * v1[:, 0]) / (v1[:, 0])
+        a = s2[1] - s1[1] - (v1[1] * s2[0] - v1[1] * s1[0]) / v1[0]
+        b = (v1[1] * v2[0] - v2[1] * v1[0]) / (v1[0])
 
-        t = (a / b)[:,np.newaxis]
-        s = (s2[:, 0:1] + t * v2[:, 0:1] - s1[:, 0:1]) / v1[:, 0:1]
+        t = (a / b)
+        s = (s2[0] + t * v2[0] - s1[0]) / v1[0]
 
         print(np.array([s2 +v2 * t]).shape)
         return s2 + v2 * t, s

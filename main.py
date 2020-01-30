@@ -8,7 +8,7 @@ from charge import Charge
 from p2p import forces, deltaPosition, deltaVelocity
 from constants import Constants
 
-# from wire import Wire
+from wire import Wire
 # from plate import Plate
 from latticeIon import LatticeIon
 
@@ -27,31 +27,20 @@ def main():
 
 
     wireLength = 1E-8
-    wireRadius = .0625E-8
+    wireRadius = .125E-8
 
 
     # wire2 = Wire(np.array([0,-wireLength/2]), np.array([0,wireLength]), wireRadius)
     # wire1 = Wire(np.array([0,-wireLength/2]), np.array([wireLength/2,wireLength]), wireRadius)
     # wire0 = Wire(np.array([0,-wireLength/2]), np.array([wireLength,wireLength]), wireRadius)
 
+    wire1 = Wire(np.array([-wireLength, 0.]), np.array([wireLength, wireLength]), wireRadius)
+
     # protons
 
-    latticeIons = []
-
-    for i in range (0, 1):
-        for j in range (0, 2):
-            latticeIons.append(LatticeIon(np.array([-12E-10 * i, -4E-10 * j]), Constants.COPPER_ION_RADIUS, Constants.E, Constants.COPPER_MASS))
-
-    for ion in latticeIons:
-        coords.append(ion.center)
-        charges.append(ion.charge)
-        masses.append(ion.mass)
-        stationary.append([1])
-    
-
     # electrons
-    for i in range(1, 3):
-        coords.append([-6E-10 * i, -6E-10 * i**2])
+    for i in range(0, 10):
+        coords.append([6E-10 * i, -6E-11 * i**2])
         charges.append(-Constants.E)
         masses.append(Constants.MASS_ELECTRON)
         stationary.append([0])
@@ -62,7 +51,7 @@ def main():
     print(n)
     vel = np.zeros((n, 2))
 
-    dt = 1E-13
+    dt = 3E-13
 
     pygame.init()
     screenSize = (800, 800)
@@ -105,57 +94,20 @@ def main():
                 vel = vel + deltaVelocity(dt, f, masses).T * (1 - stationary)
                 coords = coords + deltaPosition(dt, f, vel.T, masses).T * (1  -stationary)
 
-                for ion in latticeIons:
-                    for i in range(len(latticeIons), len(coords)):
-                        coords[i], vel[i] = ion.checkCollision(prevCoords[i], coords[i], vel[i], dt)
+                for k in range(len(charges)):
+                    collision = wire1.checkCollision(prevCoords[k], coords[k], vel[k])
+                    if collision:
+                        coords[k], vel[k] = collision
+                        coords[k] += vel[k] * dt
+
+                #print('done with loop')
+                #done = True
+
                 # collision detection for wire
-<<<<<<< HEAD
-<<<<<<< HEAD
-                print('prev coords:', prevCoords)
-                print('coords:', coords)
-                print('vel:', vel)
-                # collisionPositions, vel = wire0.checkCollision(prevCoords, coords, vel)
-                #coords = collisionPositions + 0.01 * dt * vel
+                #print('prev coords:', prevCoords)
+                #print('coords:', coords)
+                #print('vel:', vel)
                 
-
-
-                # for i in range (n):
-                    # if stationary[i][0]:
-                        # continue
-                    # result = wire0.checkCollision(prevCoords[i], coords[i], vel[i])
-                    # for ion in latticeIons:
-                    #     result = ion.checkCollision(prevCoords[i], coords[i], vel[i])
-                    #     if result:
-                    #         break
-                    # if result:
-                        # colPos, newVel = result
-                        # vel[i] = newVel
-                
-                        # coords[i] = colPos + 0.01 * dt * newVel
-                
-                    # collision = bool(result)
-=======
-=======
->>>>>>> 6500423dc84217e3d232048443decae7e237c97f
-                # for i in range (n):
-                #     if stationary[i][0]:
-                #         continue
-                #     result = wire0.checkCollision(prevCoords[i], coords[i], vel[i])
-                #     for ion in latticeIons:
-                #         result = ion.checkCollision(prevCoords[i], coords[i], vel[i])
-                #         if result:
-                #             break
-                #     if result:
-                #         colPos, newVel = result
-                #         vel[i] = newVel
-                #
-                #         coords[i] = colPos + 0.01 * dt * newVel
-                #
-                #     collision = bool(result)
-<<<<<<< HEAD
->>>>>>> 6500423dc84217e3d232048443decae7e237c97f
-=======
->>>>>>> 6500423dc84217e3d232048443decae7e237c97f
             '''
             # collision detection for plate
             for i in range (n):
@@ -176,26 +128,12 @@ def main():
                     pos = coords[c]
                     color = (100, 100, 255)
                     r = 1
-<<<<<<< HEAD
-<<<<<<< HEAD
 
-                env.drawParticle(pos, color, radius = 8)
-=======
-                    env.drawParticle(pos, color, radius = r)
-            for ion in latticeIons:
-                ion.drawIon(env)
->>>>>>> 6500423dc84217e3d232048443decae7e237c97f
-=======
-                    env.drawParticle(pos, color, radius = r)
-            for ion in latticeIons:
-                ion.drawIon(env)
->>>>>>> 6500423dc84217e3d232048443decae7e237c97f
+                env.drawParticle(pos, color, radius = 1)
 
-            #env.drawObject(w, color = (255, 100, 100))
-            #env.drawCylinder(w.start, w.end, w.r, color = (255, 100, 100))
-            # wire0.draw(env, color=(255, 100, 100))
-            # wire1.draw(env, color=(255,100,100))
-            # wire2.draw(env, color=(255,100,100))
+            wire1.draw(env, color = (255, 100, 100))
+
+
             pygame.display.flip()
             iterNum += 1
 
