@@ -12,6 +12,9 @@ from wire import Wire
 # from plate import Plate
 from latticeIon import LatticeIon
 
+import matplotlib.pyplot as plt
+import pylab
+
 import debugtools as dbt
 
 def main():
@@ -32,7 +35,7 @@ def main():
 
     latticeIons = []
     # protons
-    xNum = 15
+    xNum = 25
     yNum = 3
     for i in range(0, xNum):
         for j in range(0, yNum):
@@ -58,7 +61,9 @@ def main():
     n = charges.size
     vel = np.zeros((n, 2))
 
-    dt = 1E-12
+    dt = 5E-12
+
+    currents = []
 
     pygame.init()
     screenSize = (800, 800)
@@ -98,19 +103,29 @@ def main():
 
                 f = forces(coords, charges) + np.array([5E-19, 0]).repeat(len(charges)).reshape((2, len(charges)))
                 prevCoords = coords
+                prevVel = vel
                 vel = vel + deltaVelocity(dt, f, masses).T * (1 - stationary)
                 coords = coords + deltaPosition(dt, f, vel.T, masses).T * (1 - stationary)
-                
+
+                if iterNum % 10 == 0:
+                    currents.append(0)
                 for k in range(len(latticeIons), len(charges)):
                     collision = wire0.checkCollision(prevCoords[k], coords[k], vel[k])
+                    # if prevVel[k][0] < 0 and vel[k][0] > 0:
+                    #     currents[-1] += 1
+                    # if prevVel[k][0] > 0 and vel[k][0] < 0:
+                    #     currents[-1] -= 1
+                    currents[-1] += vel[k][0]
                     if collision:
                         wire0.checkCollision(prevCoords[k], coords[k], vel[k])
                         coords[k], vel[k] = collision
                         coords[k] += vel[k] * dt
 
+
+
                 for ion in latticeIons:
                     for i in range(len(latticeIons), len(coords)):
-                        coords[i], vel[i] = ion.checkCollision(prevCoords[i], coords[i], vel[i], dt)
+                        coords[i], vel[i] = ion.checkCollision(prevCoords[i], coords[i], vel[i], dt, dampeningFactor=0.9)
                 # collision detection for wire
                 # print('prev coords:', prevCoords)
                 # print('coords:', coords)
@@ -161,6 +176,15 @@ def main():
             # wire2.draw(env, color=(255,100,100))
             pygame.display.flip()
             iterNum += 1
+    currents = currents[:-1]
+    print(currents)
+    with open("currents.txt", "w") as f:
+        f.write(",".join(str(current for current in currents)))
+    iters = np.array(list(range(len(currents))))
+    m, b = pylab.polyfit(iters, currents, 1)
+    plt.plot(iters, currents)
+    plt.plot(iters, m*iters + b)
+    plt.show()
 
 if __name__ == "__main__":
     main()
