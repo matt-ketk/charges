@@ -35,7 +35,7 @@ def main():
 
     latticeIons = []
     # protons
-    xNum = 25
+    xNum = 15
     yNum = 3
     for i in range(0, xNum):
         for j in range(0, yNum):
@@ -64,6 +64,7 @@ def main():
     dt = 5E-12
 
     currents = []
+    xVelocities = []
 
     pygame.init()
     screenSize = (800, 800)
@@ -116,6 +117,8 @@ def main():
                     # if prevVel[k][0] > 0 and vel[k][0] < 0:
                     #     currents[-1] -= 1
                     currents[-1] += vel[k][0]
+                    xVelocities.append(vel[k][0])
+
                     if collision:
                         wire0.checkCollision(prevCoords[k], coords[k], vel[k])
                         coords[k], vel[k] = collision
@@ -125,7 +128,7 @@ def main():
 
                 for ion in latticeIons:
                     for i in range(len(latticeIons), len(coords)):
-                        coords[i], vel[i] = ion.checkCollision(prevCoords[i], coords[i], vel[i], dt, dampeningFactor=0.9)
+                        coords[i], vel[i] = ion.checkCollision(prevCoords[i], coords[i], vel[i], dt, dampeningFactor=1)
                 # collision detection for wire
                 # print('prev coords:', prevCoords)
                 # print('coords:', coords)
@@ -176,15 +179,22 @@ def main():
             # wire2.draw(env, color=(255,100,100))
             pygame.display.flip()
             iterNum += 1
+
     currents = currents[:-1]
-    print(currents)
+
+
     with open("currents.txt", "w") as f:
         f.write(",".join(str(current for current in currents)))
     iters = np.array(list(range(len(currents))))
     m, b = pylab.polyfit(iters, currents, 1)
+
+    plt.hist(xVelocities, bins=35)
+    plt.show()
+
     plt.plot(iters, currents)
     plt.plot(iters, m*iters + b)
     plt.show()
+
 
 if __name__ == "__main__":
     main()
